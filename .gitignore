@@ -1,0 +1,7 @@
+# Standard .gitignore for a basic web project
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+.idea/
+*.log
