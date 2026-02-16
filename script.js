@@ -417,6 +417,10 @@ function initializeBettingInterface(market) {
             <button class="q-btn" data-amount="10">+10</button>
             <button class="q-btn" data-amount="100">+100</button>
             <button class="q-btn" data-amount="1000">+1,000</button>
+            <button class="q-btn q-btn-neg" data-amount="-1">-1</button>
+            <button class="q-btn q-btn-neg" data-amount="-10">-10</button>
+            <button class="q-btn q-btn-neg" data-amount="-100">-100</button>
+            <button class="q-btn q-btn-neg" data-amount="-1000">-1,000</button>
         </div>
 
         <button class="trade-button-main" id="tradeButtonMain">
@@ -468,17 +472,48 @@ function initializeBettingInterface(market) {
             if (btn.dataset.amount) {
                 currentBetAmount += parseInt(btn.dataset.amount);
             }
+            // Ensure bet amount never goes below zero
+            if (currentBetAmount < 0) currentBetAmount = 0;
             updateBettingDisplay();
         };
     });
 
     tradeButton.onclick = () => {
-        const actionLabel = currentTradeMode === 'buy' ? 'Buy' : 'Sell';
-        alert(`Order Placed: ${actionLabel.toUpperCase()} for ${currentOutcome} at G ${currentBetAmount}`);
+        if (currentBetAmount <= 0) {
+            alert("Please enter an amount to trade.");
+            return;
+        }
 
         if (currentTradeMode === 'buy') {
+            if (currentBetAmount > userBalance) {
+                alert("Insufficient balance!");
+                return;
+            }
+
             userBalance -= currentBetAmount;
+            userBets.add(market.id);
             updateBalanceUI();
+
+            // Custom notification
+            const notification = document.createElement('div');
+            notification.className = 'watchlist-popup'; // Reusing style for consistency
+            notification.style.background = 'var(--accent-blue)';
+            notification.innerHTML = `Order Placed: Bought ${currentOutcome} for <img src="bucks.png" class="gbucks-logo-inline"> ${currentBetAmount.toLocaleString()}`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+
+            // Optional: reset bet amount
+            currentBetAmount = 0;
+            updateBettingDisplay();
+
+            // Refresh grid if on Active filter
+            if (currentVolumeDisplay === 'active') {
+                renderMarkets();
+            }
+        } else {
+            // For Sell: simple logic for demonstration
+            userBets.delete(market.id);
+            alert(`Order Placed: Sold ${currentOutcome} shares.`);
         }
     };
 }
