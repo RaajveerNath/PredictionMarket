@@ -524,18 +524,18 @@ function initializeBettingInterface(market) {
                 return;
             }
 
-            const sharesBought = amount / priceDecimal;
+            const pricePerShare = outcomeOption.percent;
+            const sharesBought = amount / pricePerShare;
             userBalance -= amount;
 
             if (!userPositions[posKey]) {
-                userPositions[posKey] = { shares: 0, avgPrice: priceDecimal };
+                userPositions[posKey] = { shares: 0, avgPrice: pricePerShare };
             } else {
-                // Weighted average price (optional but good)
                 const totalCost = (userPositions[posKey].shares * userPositions[posKey].avgPrice) + amount;
                 userPositions[posKey].shares += sharesBought;
                 userPositions[posKey].avgPrice = totalCost / userPositions[posKey].shares;
             }
-            userPositions[posKey].shares = Math.round(userPositions[posKey].shares); // Keep it clean
+            userPositions[posKey].shares = parseFloat(userPositions[posKey].shares.toFixed(2));
 
             updateBalanceUI();
 
@@ -543,7 +543,7 @@ function initializeBettingInterface(market) {
             const notification = document.createElement('div');
             notification.className = 'watchlist-popup';
             notification.style.background = 'var(--accent-blue)';
-            notification.innerHTML = `Position Added: ${userPositions[posKey].shares.toLocaleString()} total shares of ${currentOutcome}`;
+            notification.innerHTML = `Transaction Successful: Bought ${sharesBought.toFixed(2)} shares of ${currentOutcome}`;
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
 
@@ -566,7 +566,8 @@ function initializeBettingInterface(market) {
                 return;
             }
 
-            const saleProceeds = sharesToSell * priceDecimal;
+            const pricePerShare = outcomeOption.percent;
+            const saleProceeds = sharesToSell * pricePerShare;
             userBalance += saleProceeds;
             currentPosition.shares -= sharesToSell;
 
@@ -769,9 +770,9 @@ function renderMarkets(activeFilter = 'All') {
             let totalValue = 0;
             m.options.forEach(opt => {
                 const pos = userPositions[`${m.id}_${opt.name}`];
-                if (pos) totalValue += pos.shares * (opt.percent / 100);
+                if (pos) totalValue += pos.shares * opt.percent;
             });
-            displayVolume = `<span style="color: var(--accent-green); font-weight: 700;">Value: <img src="bucks.png" class="gbucks-logo-inline"> ${totalValue.toLocaleString()}</span>`;
+            displayVolume = `<span style="color: var(--accent-green); font-weight: 700;">Portfolio Value: <img src="bucks.png" class="gbucks-logo-inline"> ${totalValue.toLocaleString()}</span>`;
         } else { // watchlist
             displayVolume = formatVolume(m.volume24hr + m.volume * 0.1);
         }
@@ -809,16 +810,29 @@ function renderMarkets(activeFilter = 'All') {
                 textColor = '#ef4444';
             }
 
+            const posKey = `${m.id}_${opt.name}`;
+            const hasPosition = !!userPositions[posKey];
+
+            // If we are in 'Active' view, skip options the user doesn't own
+            if (currentVolumeDisplay === 'active' && !hasPosition) return '';
+
+            const highlightStyle = hasPosition && currentVolumeDisplay !== 'active' ? `border: 1px solid ${textColor}; background: ${houseColor}; box-shadow: 0 0 10px ${houseColor};` : '';
+            const positionInfo = hasPosition ? `<span style="font-size: 0.75rem; color: var(--accent-green); display: block;">Owned: ${userPositions[posKey].shares} shares</span>` : '';
+
             return `
-                    <div class="option-row">
-                        <span class="option-name">${opt.name}</span>
+                    <div class="option-row" style="${highlightStyle} border-radius: 8px; padding: 4px 8px; margin: 2px -8px;">
+                        <div style="flex: 1;">
+                            <span class="option-name">${opt.name}</span>
+                            ${positionInfo}
+                        </div>
                         <div class="option-right">
                             <button class="vote-btn-p" style="background: ${houseColor}; color: ${textColor};" onclick="event.stopPropagation(); showEventPage('${m.id}');">
                                 ${opt.percent}%
                             </button>
                         </div>
                     </div>
-                `}).join('')}
+                `;
+        }).join('')}
             </div>
 
             <div class="card-footer">
