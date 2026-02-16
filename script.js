@@ -1,201 +1,198 @@
 /**
  * Mock Data - Polymarket Style
  */
-const markets = [
+const houses = [
+    { name: 'Nagarjuna', color: '#ef4444' },
+    { name: 'Nalanda', color: '#3b82f6' },
+    { name: 'Vijaynagar', color: '#f59e0b' },
+    { name: 'Taxila', color: '#10b981' }
+];
+
+const sports = [
+    { name: 'Football', icon: 'football.png' }, // Football
+    { name: 'Cricket', icon: 'cricket-custom.png' }, // Cricket Bat, Ball, Wickets
+    { name: 'Basketball', icon: 'basketball.png' }, // Basketball
+    { name: 'Hockey', icon: 'hockey2.png' }, // Hockey
+    { name: 'Tennis', icon: 'tennis.png' }, // Tennis
+    { name: 'Badminton', icon: 'badminton.png' }, // Badminton
+    { name: 'Swimming', icon: 'swimming.png' }, // Swimming
+    { name: 'Shooting', icon: 'shooting.png' } // Shooting
+];
+
+const generatedMarkets = [];
+
+// 1. Generate "Who will win" for each sport
+sports.forEach(sport => {
+    generatedMarkets.push({
+        id: `hps-${sport.name.toLowerCase()}-2026`,
+        title: `Who will win the Inter-house ${sport.name} Championship 2026`,
+        icon: sport.icon,
+        volume: 25000 + Math.floor(Math.random() * 20000),
+        volume24hr: 5000 + Math.floor(Math.random() * 5000),
+        liquidity: 50000 + Math.floor(Math.random() * 50000),
+        createdAt: new Date('2026-01-15'),
+        endDate: new Date('2026-06-30'),
+        category: 'Sports',
+        tags: ['Trending', 'Sports', sport.name],
+        isNew: false,
+        options: houses.map(h => ({ ...h, percent: 25 })),
+        chartData: [20, 25, 30, 25, 25]
+    });
+
+    // 2. Generate fixtures for every team combination (6 combinations: 4C2)
+    for (let i = 0; i < houses.length; i++) {
+        for (let j = i + 1; j < houses.length; j++) {
+            const h1 = houses[i];
+            const h2 = houses[j];
+            generatedMarkets.push({
+                id: `fixture-${sport.name.toLowerCase()}-${h1.name.toLowerCase()}-${h2.name.toLowerCase()}`,
+                title: `${sport.name}: ${h1.name} vs ${h2.name}`,
+                icon: sport.icon,
+                volume: 8000 + Math.floor(Math.random() * 10000),
+                volume24hr: 1000 + Math.floor(Math.random() * 3000),
+                liquidity: 20000 + Math.floor(Math.random() * 20000),
+                createdAt: new Date('2026-02-01'),
+                endDate: new Date('2026-03-15'),
+                category: 'Sports',
+                tags: ['Sports', sport.name, 'Fixture'],
+                isNew: true,
+                options: [
+                    { name: h1.name, percent: 52, color: h1.color },
+                    { name: h2.name, percent: 48, color: h2.color }
+                ],
+                chartData: [45, 48, 50, 51, 52]
+            });
+        }
+    }
+});
+
+const staticMarkets = [
     {
         id: 'hps-sports-day-2026',
         title: 'Who will win Sports Day in HPS in 2026',
-        icon: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=100&q=80',
-        volume: 4200,
-        volume24hr: 850,
-        liquidity: 8500,
+        icon: 'sports.png',
+        volume: 42000,
+        volume24hr: 8500,
+        liquidity: 85000,
         createdAt: new Date('2026-01-20'),
         endDate: new Date('2026-03-15'),
         category: 'Sports',
-        tags: ['New', 'Trending', 'Sports', 'HPS', 'HPS Sports', 'Athletics'],
+        tags: ['New', 'Trending', 'Sports', 'Athletics'],
         isNew: true,
-        options: [
-            { name: 'Nagarjuna', percent: 42.5, color: '#ef4444' },
-            { name: 'Nalanda', percent: 35.1, color: '#3b82f6' },
-            { name: 'Vijaynagar', percent: 15.2, color: '#f59e0b' },
-            { name: 'Taxila', percent: 7.2, color: '#10b981' }
-        ],
+        options: houses.map(h => ({ ...h, percent: 25 })),
         chartData: [20, 25, 30, 28, 35, 42.5]
     },
     {
-        id: 'hps-football-2026',
-        title: 'Who will win the football match between Taxila and Nagarjuna',
-        icon: 'https://images.unsplash.com/photo-1551952237-954a01c00a26?auto=format&fit=crop&w=100&q=80',
-        volume: 1800,
-        volume24hr: 420,
-        liquidity: 3200,
-        createdAt: new Date('2026-01-21'),
-        endDate: new Date('2026-02-10'),
-        category: 'Sports',
-        tags: ['New', 'Sports', 'HPS', 'HPS Sports', 'Football'],
-        isNew: true,
-        options: [
-            { name: 'Taxila', percent: 55.0, color: '#10b981' },
-            { name: 'Nagarjuna', percent: 45.0, color: '#ef4444' }
-        ],
-        chartData: [40, 45, 50, 52, 55]
-    },
-    {
-        id: 'cricket-nagarjuna-nalanda',
-        title: 'Who will win the cricket match between Nagarjuna and Nalanda in 2026',
-        icon: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?auto=format&fit=crop&w=100&q=80',
-        volume: 2400,
-        volume24hr: 680,
-        liquidity: 4800,
-        createdAt: new Date('2026-01-19'),
-        endDate: new Date('2026-02-05'),
-        category: 'Sports',
-        tags: ['Trending', 'Sports', 'HPS', 'HPS Sports', 'Cricket'],
-        isNew: false,
-        options: [
-            { name: 'Nagarjuna', percent: 68, color: '#ef4444' },
-            { name: 'Nalanda', percent: 32, color: '#3b82f6' }
-        ],
-        chartData: [50, 55, 60, 65, 68]
-    },
-    {
-        id: 'vice-principal-hps',
-        title: 'Who will be appointed as vice-principal of Hyderabad Public School after the current vice-principal retires',
-        icon: 'https://images.unsplash.com/photo-1544650030-3c698527819c?auto=format&fit=crop&w=100&q=80',
-        volume: 850,
-        volume24hr: 125,
-        liquidity: 1700,
-        createdAt: new Date('2026-01-18'),
-        endDate: new Date('2026-06-30'),
-        category: 'Politics',
-        tags: ['Politics', 'HPS', 'HPS Politics'],
-        isNew: false,
-        options: [
-            { name: 'Senior Faculty P', percent: 45, color: '#3b82f6' },
-            { name: 'External Candidate Q', percent: 30, color: '#ef4444' },
-            { name: 'Department Head R', percent: 25, color: '#f59e0b' }
-        ],
-        chartData: [10, 20, 35, 40, 45]
-    },
-    {
         id: 'hps-dance-2026',
-        title: 'Who will win the Dance competition 2026 in HPS',
-        icon: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=100&q=80',
-        volume: 1200,
-        volume24hr: 290,
-        liquidity: 2100,
+        title: 'Who will win the Inter-house Dance competition 2026',
+        icon: 'dance.png',
+        volume: 12000,
+        volume24hr: 2900,
+        liquidity: 21000,
         createdAt: new Date('2026-01-22'),
-        endDate: new Date('2026-03-20'),
+        endDate: new Date('2026-05-20'),
         category: 'Culture',
-        tags: ['New', 'Trending', 'Culture', 'HPS', 'HPS Culture'],
+        tags: ['New', 'Trending', 'Culture'],
         isNew: true,
-        options: [
-            { name: 'Nagarjuna', percent: 30, color: '#ef4444' },
-            { name: 'Nalanda', percent: 25, color: '#3b82f6' },
-            { name: 'Vijaynagar', percent: 25, color: '#f59e0b' },
-            { name: 'Taxila', percent: 20, color: '#10b981' }
-        ],
+        options: houses.map(h => ({ ...h, percent: 25 })),
         chartData: [20, 22, 25, 28, 30]
     },
     {
-        id: 'dance-nagarjuna-taxila',
-        title: 'Who will win Interhouse Dance competition between Nagarjuna and Taxila',
-        icon: 'https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=100&q=80',
-        volume: 950,
-        volume24hr: 180,
-        liquidity: 1900,
-        createdAt: new Date('2026-01-17'),
-        endDate: new Date('2026-02-28'),
-        category: 'Culture',
-        tags: ['Culture', 'HPS', 'HPS Culture'],
-        isNew: false,
-        options: [
-            { name: 'Nagarjuna', percent: 52, color: '#ef4444' },
-            { name: 'Taxila', percent: 48, color: '#10b981' }
-        ],
-        chartData: [45, 48, 50, 51, 52]
-    },
-    {
-        id: 'points-nalanda-vijaynagar',
-        title: 'Who will score higher points in inter-house dance competition between Nalanda and Vijaynagar',
-        icon: 'https://images.unsplash.com/photo-1504609770354-fac4f342c4ef?auto=format&fit=crop&w=100&q=80',
-        volume: 1100,
-        volume24hr: 245,
-        liquidity: 2200,
-        createdAt: new Date('2026-01-16'),
-        endDate: new Date('2026-03-01'),
-        category: 'Culture',
-        tags: ['Culture', 'HPS', 'HPS Culture'],
-        isNew: false,
-        options: [
-            { name: 'Nalanda', percent: 55, color: '#3b82f6' },
-            { name: 'Vijaynagar', percent: 45, color: '#f59e0b' }
-        ],
-        chartData: [40, 45, 50, 53, 55]
-    },
-    {
         id: 'hps-science-fair-2026',
-        title: 'Who will win the Inter-house Science Fair 2026 in HPS',
-        icon: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=100&q=80',
-        volume: 3100,
-        volume24hr: 720,
-        liquidity: 6200,
+        title: 'Who will win the Inter-house Science Fair 2026',
+        icon: 'science.png',
+        volume: 31000,
+        volume24hr: 7200,
+        liquidity: 62000,
         createdAt: new Date('2026-01-15'),
         endDate: new Date('2026-04-15'),
         category: 'Academics',
-        tags: ['Trending', 'Academics', 'HPS', 'HPS Academics', 'Science Fair'],
+        tags: ['Trending', 'Academics', 'Science Fair'],
         isNew: false,
-        options: [
-            { name: 'Nagarjuna', percent: 28, color: '#ef4444' },
-            { name: 'Nalanda', percent: 32, color: '#3b82f6' },
-            { name: 'Vijaynagar', percent: 22, color: '#f59e0b' },
-            { name: 'Taxila', percent: 18, color: '#10b981' }
-        ],
+        options: houses.map(h => ({ ...h, percent: 25 })),
         chartData: [20, 25, 30, 31, 32]
     },
     {
         id: 'hps-boards-2026',
         title: 'Which house will have the highest average in the Grade 10 Board Exams',
-        icon: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=100&q=80',
-        volume: 5500,
-        volume24hr: 1200,
-        liquidity: 11000,
+        icon: 'brain.png',
+        volume: 55000,
+        volume24hr: 12000,
+        liquidity: 110000,
         createdAt: new Date('2026-01-10'),
         endDate: new Date('2026-05-30'),
         category: 'Academics',
-        tags: ['Trending', 'Academics', 'HPS', 'HPS Academics', 'Exams'],
+        tags: ['Trending', 'Academics', 'Exams'],
         isNew: false,
-        options: [
-            { name: 'Nagarjuna', percent: 35, color: '#ef4444' },
-            { name: 'Nalanda', percent: 30, color: '#3b82f6' },
-            { name: 'Vijaynagar', percent: 20, color: '#f59e0b' },
-            { name: 'Taxila', percent: 15, color: '#10b981' }
-        ],
+        options: houses.map(h => ({ ...h, percent: 25 })),
         chartData: [25, 28, 30, 33, 35]
     },
     {
-        id: 'ayaan-board-exams',
-        title: 'Will Ayaan get more than 3 A*s in his AS Level Board exams?',
-        icon: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=100&q=80',
-        volume: 3200,
-        volume24hr: 450,
-        liquidity: 5000,
-        createdAt: new Date('2026-01-22'),
-        endDate: new Date('2026-08-15'),
-        category: 'Academics',
-        tags: ['New', 'Academics', 'HPS', 'Exams', 'Ayaan'],
-        isNew: true,
+        id: 'vice-principal-hps',
+        title: 'Who will be appointed as the next Vice-Principal of HPS',
+        icon: 'politics.png',
+        volume: 8500,
+        volume24hr: 1250,
+        liquidity: 17000,
+        createdAt: new Date('2026-01-18'),
+        endDate: new Date('2026-06-30'),
+        category: 'Politics',
+        tags: ['Politics'],
+        isNew: false,
         options: [
-            { name: 'Yes', percent: 65, color: '#10b981' },
-            { name: 'No', percent: 35, color: '#ef4444' }
+            { name: houses[0].name + ' Faculty', percent: 35, color: houses[0].color },
+            { name: houses[1].name + ' Faculty', percent: 25, color: houses[1].color },
+            { name: houses[2].name + ' Faculty', percent: 20, color: houses[2].color },
+            { name: houses[3].name + ' Faculty', percent: 20, color: houses[3].color }
         ],
-        chartData: [40, 45, 50, 60, 65]
+        chartData: [10, 20, 35, 40, 45],
+        isCompleted: true,
+        winningOutcome: 'Vijaynagar Faculty'
     }
+    // Example Completed Market
+
 ];
+
+const markets = [...generatedMarkets, ...staticMarkets];
+
+const userBets = new Set();
+const watchList = new Set();
+
+let userBalance = 10000;
+
+function updateBalanceUI() {
+    const balEl = document.getElementById('userBalanceText');
+    if (balEl) balEl.innerText = userBalance.toLocaleString();
+}
+
+// Initial call
+setTimeout(updateBalanceUI, 100);
 
 let currentChart = null;
 let currentSortMethod = 'newest';
 let currentVolumeDisplay = '24hr';
+let currentChartTimeframe = 'ALL';
+
+/**
+ * Leaderboard Mock Data
+ */
+const leaderboardData = [
+    { rank: 1, name: 'Aryansh', profit: 32000, volume: 85000, joined: 'May 2024', positions: '12k' },
+    { rank: 2, name: 'Raajveer', profit: 28500, volume: 72000, joined: 'Aug 2025', positions: '9k' },
+    { rank: 3, name: 'Advaith', profit: 24000, volume: 65000, joined: 'Dec 2024', positions: '8k' },
+    { rank: 4, name: 'Anirudh', profit: 18500, volume: 54000, joined: 'Jan 2025', positions: '5k' },
+    { rank: 5, name: 'Reyan', profit: 15200, volume: 42000, joined: 'Feb 2025', positions: '4k' },
+    { rank: 6, name: 'Maroof', profit: 12500, volume: 38000, joined: 'Mar 2025', positions: '3.5k' },
+    { rank: 7, name: 'Adhya', profit: 9500, volume: 25000, joined: 'Apr 2025', positions: '2k' }
+];
+
+const bigWinsData = [
+    { rank: 1, user: 'Raajveer', market: 'Inter-house Football...', marketId: 'hps-football-2026', prevPayout: 12000, currPayout: 25000 },
+    { rank: 2, user: 'Anirudh', market: 'Inter-house Cricket...', marketId: 'hps-cricket-2026', prevPayout: 8000, currPayout: 18500 },
+    { rank: 3, user: 'Adhya', market: 'HPS Sports Day 2026', marketId: 'hps-sports-day-2026', prevPayout: 5000, currPayout: 12000 },
+    { rank: 4, user: 'Aryansh', market: 'Inter-house Dance...', marketId: 'hps-dance-2026', prevPayout: 15000, currPayout: 32000 },
+    { rank: 5, user: 'Maroof', market: 'Next Vice-Principal...', marketId: 'vice-principal-hps', prevPayout: 3000, currPayout: 9500 }
+];
 
 /**
  * Navigation Logic
@@ -203,6 +200,16 @@ let currentVolumeDisplay = '24hr';
 function showHomepage() {
     document.getElementById('homepage').style.display = 'block';
     document.getElementById('eventpage').style.display = 'none';
+    document.getElementById('leaderboardpage').style.display = 'none';
+    document.getElementById('completedEventsPage').style.display = 'none';
+
+    // Default back to 24hr or keep current if valid
+    if (currentVolumeDisplay === 'watchlist' && watchList.size === 0) {
+        currentVolumeDisplay = '24hr';
+        document.querySelectorAll('.volume-option').forEach(v => v.classList.remove('active'));
+        document.querySelector('[data-volume="24hr"]').classList.add('active');
+    }
+
     renderMarkets();
 }
 
@@ -212,31 +219,155 @@ function showEventPage(marketId) {
 
     document.getElementById('homepage').style.display = 'none';
     document.getElementById('eventpage').style.display = 'block';
+    document.getElementById('leaderboardpage').style.display = 'none';
+    document.getElementById('completedEventsPage').style.display = 'none';
 
     // Update Text Content
     document.getElementById('eventTitle').innerText = market.title;
     document.getElementById('eventIcon').src = market.icon;
-    document.getElementById('eventVolume').innerText = formatVolume(market.volume);
+    document.getElementById('eventVolume').innerHTML = formatVolume(market.volume);
     const dateStr = market.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     document.getElementById('eventDate').innerText = dateStr;
 
-    // Default to first outcome
     currentOutcome = market.options[0].name;
     currentMarket = market;
 
-    // Update Widget Header Dropdown
-    const selector = document.getElementById('widgetOutcomeSelector');
-    selector.innerHTML = market.options.map(opt =>
-        `<option value="${opt.name}">${opt.name}</option>`
-    ).join('');
-    selector.value = currentOutcome;
+    // --- Update Icons on Event Page ---
+    const watchIcon = document.getElementById('eventWatchlistIcon');
 
-    document.getElementById('widgetOutcomeIcon').src = market.icon;
+    // Watchlist State
+    const updateWatchIcon = () => {
+        const isWatched = watchList.has(market.id);
+        watchIcon.classList.toggle('active', isWatched);
+        watchIcon.setAttribute('data-tooltip', isWatched ? 'Remove from Watch List' : 'Add to Watch List');
+    };
+    updateWatchIcon();
+
+    watchIcon.onclick = (e) => {
+        const added = toggleWatchList(e, market.id);
+        if (added) {
+            // Simple notification
+            const notification = document.createElement('div');
+            notification.className = 'watchlist-popup';
+            notification.innerText = 'Added to watchlist';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 2000);
+        }
+        updateWatchIcon(); // Refresh local state
+    };
 
     renderChart(market);
 
     // Initialize betting interface for this market
-    initializeBettingInterface(market);
+    // Initialize betting interface or show outcome
+    if (market.isCompleted) {
+        showOutcomeWidget(market);
+    } else {
+        initializeBettingInterface(market);
+    }
+}
+
+function showOutcomeWidget(market) {
+    const tradeWidget = document.querySelector('.trade-widget');
+    tradeWidget.innerHTML = `
+        <div class="outcome-display-container">
+            <div class="outcome-icon-large">🏆</div>
+            <div class="outcome-label">Market Resolved</div>
+            <div class="outcome-value">${market.winningOutcome}</div>
+            <div class="outcome-subtext">won this event</div>
+        </div>
+    `;
+}
+
+function showLeaderboardPage() {
+    document.getElementById('homepage').style.display = 'none';
+    document.getElementById('eventpage').style.display = 'none';
+    document.getElementById('leaderboardpage').style.display = 'block';
+    document.getElementById('completedEventsPage').style.display = 'none';
+
+    renderLeaderboard();
+}
+
+function showCompletedEventsPage() {
+    document.getElementById('homepage').style.display = 'none';
+    document.getElementById('eventpage').style.display = 'none';
+    document.getElementById('leaderboardpage').style.display = 'none';
+    document.getElementById('completedEventsPage').style.display = 'block';
+
+    renderCompletedEvents();
+}
+
+function renderLeaderboard() {
+    const tableBody = document.getElementById('lbTableBody');
+    const bigWinsList = document.getElementById('bigWinsList');
+
+    // Render Table Rows
+    tableBody.innerHTML = leaderboardData.map(u => `
+        <tr>
+            <td class="lb-col-rank">${u.rank}</td>
+            <td class="lb-col-user">
+                <div class="lb-user-row" data-user-name="${u.name}">
+                    <div class="lb-avatar" style="background: ${getRandomGradient()}"></div>
+                    <span class="lb-name">${u.name}</span>
+                </div>
+            </td>
+            <td class="lb-col-profit ${u.profit >= 0 ? 'profit-plus' : 'profit-minus'}">
+                ${u.profit >= 0 ? '+' : ''}<img src="bucks.png" class="gbucks-logo-inline"> ${Math.abs(u.profit).toLocaleString()}
+            </td>
+            <td class="lb-col-volume"><img src="bucks.png" class="gbucks-logo-inline"> ${u.volume.toLocaleString()}</td>
+        </tr>
+    `).join('');
+
+    // Render Big Wins
+    bigWinsList.innerHTML = bigWinsData.map(w => `
+        <div class="win-item" onclick="showEventPage('${w.marketId}')" style="cursor: pointer;">
+            <div class="win-rank">${w.rank}</div>
+            <div class="win-avatar" style="background: ${getRandomGradient()}"></div>
+            <div class="win-details">
+                <div class="win-user">${w.user}</div>
+                <div class="win-market">${w.market}</div>
+                <div class="win-stats">
+                    <span class="win-prev"><img src="bucks.png" class="gbucks-logo-inline"> ${w.prevPayout.toLocaleString()}</span>
+                    <span class="dropdown-chevron" style="transform: rotate(-90deg); font-size: 0.6rem;">⌵</span>
+                    <span class="win-curr"><img src="bucks.png" class="gbucks-logo-inline"> ${w.currPayout.toLocaleString()}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // Add Hover Listeners for Profile Popup
+    const popup = document.getElementById('lbProfilePopup');
+    document.querySelectorAll('.lb-user-row').forEach(row => {
+        row.onmouseenter = (e) => {
+            const userName = row.dataset.userName;
+            const userData = leaderboardData.find(u => u.name === userName);
+
+            if (userData) {
+                document.getElementById('ppName').innerText = userData.name;
+                document.getElementById('ppJoined').innerText = `Joined ${userData.joined}`;
+                document.getElementById('ppPositions').innerText = userData.positions;
+                document.getElementById('ppProfit').innerHTML = `<img src="bucks.png" class="gbucks-logo-inline"> ${userData.profit.toLocaleString()}`;
+                document.getElementById('ppVolume').innerHTML = `<img src="bucks.png" class="gbucks-logo-inline"> ${userData.volume.toLocaleString()}`;
+
+                // Position popup
+                const rect = row.getBoundingClientRect();
+                popup.style.display = 'block';
+                popup.style.left = `${rect.left + 40}px`;
+                popup.style.top = `${rect.top - 160}px`;
+            }
+        };
+
+        row.onmouseleave = () => {
+            popup.style.display = 'none';
+        };
+    });
+}
+
+function getRandomGradient() {
+    const colors = ['#a855f7', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
+    const c1 = colors[Math.floor(Math.random() * colors.length)];
+    const c2 = colors[Math.floor(Math.random() * colors.length)];
+    return `linear-gradient(135deg, ${c1}, ${c2})`;
 }
 
 /**
@@ -249,22 +380,80 @@ let currentTradeMode = 'buy'; // 'buy' or 'sell'
 
 function initializeBettingInterface(market) {
     currentMarket = market;
+
+    // Restore the trade widget HTML structure if it was replaced by outcome widget
+    const tradeWidget = document.querySelector('.trade-widget');
+    tradeWidget.innerHTML = `
+        <div class="widget-outcome-header">
+            <img src="${market.icon}" alt="" id="widgetOutcomeIcon" class="widget-outcome-icon">
+            <div class="outcome-select-wrapper">
+                <select id="widgetOutcomeSelector" class="widget-outcome-name-dropdown">
+                     ${market.options.map(opt => `<option value="${opt.name}">${opt.name}</option>`).join('')}
+                </select>
+                <span class="dropdown-chevron">⌵</span>
+            </div>
+        </div>
+
+        <div class="widget-tabs-row">
+            <div class="trade-tabs-simple">
+                <div class="trade-tab-simple active" data-action="buy">Buy</div>
+                <div class="trade-tab-simple" data-action="sell">Sell</div>
+            </div>
+            <div class="order-type-simple">
+                Market ⌵
+            </div>
+        </div>
+
+        <div class="amount-container">
+            <span class="amount-label">Amount</span>
+            <div class="amount-display">
+                <img src="bucks.png" class="gbucks-icon" style="width: 28px; height: 28px; margin-right: 4px;">
+                <span id="betAmountDisplay">0.</span>
+            </div>
+        </div>
+
+        <div class="quick-btns-row">
+            <button class="q-btn" data-amount="1">+1</button>
+            <button class="q-btn" data-amount="10">+10</button>
+            <button class="q-btn" data-amount="100">+100</button>
+            <button class="q-btn" data-amount="1000">+1,000</button>
+        </div>
+
+        <button class="trade-button-main" id="tradeButtonMain">
+            Trade
+        </button>
+
+        <div class="trade-stats-footer" id="tradeStatsFooter">
+            <div class="stat-row">
+                <span>Avg price</span>
+                <span id="statAvgPrice">0¢</span>
+            </div>
+            <div class="stat-row">
+                <span>Potential return</span>
+                <span id="statPotentialReturn" style="color: var(--accent-green);"><img src="bucks.png" class="gbucks-logo-inline"> 0.00</span>
+            </div>
+        </div>
+
+        <p style="margin-top: 24px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+            By trading, you agree to the <a href="#" style="color: var(--text-muted)">Terms of Use</a>.
+        </p>
+    `;
+
+    // Re-attach listeners
     const quickButtons = document.querySelectorAll('.q-btn');
     const tradeTabs = document.querySelectorAll('.trade-tab-simple');
     const tradeButton = document.getElementById('tradeButtonMain');
     const outcomeSelector = document.getElementById('widgetOutcomeSelector');
 
-    // Reset State
+    currentOutcome = market.options[0].name;
     currentBetAmount = 0;
     updateBettingDisplay();
 
-    // Outcome selector change
     outcomeSelector.onchange = (e) => {
         currentOutcome = e.target.value;
         updateBettingDisplay();
     };
 
-    // Trade tab switching (Buy/Sell)
     tradeTabs.forEach(tab => {
         tab.onclick = () => {
             tradeTabs.forEach(t => t.classList.remove('active'));
@@ -274,28 +463,25 @@ function initializeBettingInterface(market) {
         };
     });
 
-    // Quick amounts
     quickButtons.forEach(btn => {
         btn.onclick = () => {
-            if (btn.dataset.mode === 'max') {
-                currentBetAmount = 1000; // Simulated Max
-            } else {
+            if (btn.dataset.amount) {
                 currentBetAmount += parseInt(btn.dataset.amount);
             }
             updateBettingDisplay();
         };
     });
 
-    // Trade execution (simulated)
     tradeButton.onclick = () => {
         const actionLabel = currentTradeMode === 'buy' ? 'Buy' : 'Sell';
-        alert(`Order Placed: ${actionLabel.toUpperCase()} for ${currentOutcome} at $${currentBetAmount}`);
-        currentBetAmount = 0;
-        updateBettingDisplay();
+        alert(`Order Placed: ${actionLabel.toUpperCase()} for ${currentOutcome} at G ${currentBetAmount}`);
+
+        if (currentTradeMode === 'buy') {
+            userBalance -= currentBetAmount;
+            updateBalanceUI();
+        }
     };
 }
-
-// Removed old betting logic helpers
 
 function updateBettingDisplay() {
     if (!currentMarket) return;
@@ -311,8 +497,8 @@ function updateBettingDisplay() {
 
     // Update DOM
     document.getElementById('betAmountDisplay').innerText = currentBetAmount + '.';
-    document.getElementById('statAvgPrice').innerText = price.toFixed(1) + '¢';
-    document.getElementById('statPotentialReturn').innerText = '$' + potentialReturn.toFixed(2);
+    document.getElementById('statAvgPrice').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + price.toFixed(1);
+    document.getElementById('statPotentialReturn').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + potentialReturn.toFixed(2);
 
     const actionText = currentTradeMode === 'buy' ? 'Buy' : 'Sell';
     document.getElementById('tradeButtonMain').innerText = `${actionText} ${currentOutcome}`;
@@ -323,9 +509,10 @@ function updateBettingDisplay() {
  * Utility Functions
  */
 function formatVolume(volume) {
-    if (volume >= 1000000) return '$' + (volume / 1000000).toFixed(1) + 'M Vol.';
-    if (volume >= 1000) return '$' + (volume / 1000).toFixed(1) + 'k Vol.';
-    return '$' + volume + ' Vol.';
+    const logo = '<img src="bucks.png" class="gbucks-logo-inline">';
+    if (volume >= 1000000) return logo + ' ' + (volume / 1000000).toFixed(1) + 'M Vol.';
+    if (volume >= 1000) return logo + ' ' + (volume / 1000).toFixed(1) + 'k Vol.';
+    return logo + ' ' + volume + ' Vol.';
 }
 
 function calculateCompetitiveness(market) {
@@ -366,6 +553,19 @@ function sortMarkets(marketsArray, method) {
     }
 }
 
+function toggleWatchList(e, marketId) {
+    if (e) e.stopPropagation();
+    let added = false;
+    if (watchList.has(marketId)) {
+        watchList.delete(marketId);
+    } else {
+        watchList.add(marketId);
+        added = true;
+    }
+    renderMarkets(document.querySelector('.sub-cat-pill.active')?.innerText || 'All');
+    return added;
+}
+
 /**
  * Rendering Logic
  */
@@ -374,33 +574,63 @@ function renderMarkets(activeFilter = 'All') {
     grid.innerHTML = '';
 
     const activeMainCat = document.querySelector('.cat-item.active')?.dataset.cat || 'Trending';
+    const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+    const query = activeFilter.toLowerCase();
 
     // Filter markets
     const filtered = markets.filter(m => {
-        const query = activeFilter.toLowerCase();
+        // Exclude completed events from main feed
+        if (m.isCompleted) return false;
 
-        // If "All" is selected, show all markets (no filtering by sub-category)
+        // --- Volume Toggle Filters ---
+        if (currentVolumeDisplay === 'active') {
+            return userBets.has(m.id);
+        }
+        if (currentVolumeDisplay === 'watchlist') {
+            return watchList.has(m.id);
+        }
+
+        // --- Global Search Logic ---
+        if (searchQuery.length > 0) {
+            return m.title.toLowerCase().includes(searchQuery) ||
+                m.category.toLowerCase().includes(searchQuery) ||
+                m.tags.some(tag => tag.toLowerCase().includes(searchQuery)) ||
+                m.options.some(opt => opt.name.toLowerCase().includes(searchQuery));
+        }
+
+        // --- Category Navigation Logic (only if NOT searching) ---
+        // 1. Must match main category
+        let matchesMain = false;
+        if (activeMainCat === 'Trending') {
+            matchesMain = m.tags.includes('Trending');
+        } else if (activeMainCat === 'New') {
+            matchesMain = m.isNew;
+        } else {
+            matchesMain = m.category === activeMainCat;
+        }
+
+        if (!matchesMain) return false;
+
+        // 2. Must match sub-category filter
         if (activeFilter === 'All') {
             return true;
         }
 
-        // Context-aware HPS filtering
-        if (query === 'hps') {
-            if (activeMainCat === 'Sports') return m.tags.includes('HPS Sports');
-            if (activeMainCat === 'Politics') return m.tags.includes('HPS Politics');
-            if (activeMainCat === 'Culture') return m.tags.includes('HPS Culture');
-            if (activeMainCat === 'Academics') return m.tags.includes('HPS Academics');
-            return m.tags.includes('HPS');
-        }
-
-        // Filter by sub-category (tags, category, or title match)
+        // Sub-category matching
         return m.tags.some(tag => tag.toLowerCase() === query) ||
             m.category.toLowerCase() === query ||
             m.title.toLowerCase().includes(query);
     });
 
-    // Sort markets
-    const sorted = sortMarkets(filtered, currentSortMethod);
+    // Sort markets based on volume toggle or default method
+    let sorted;
+    if (currentVolumeDisplay === '24hr') {
+        sorted = [...filtered].sort((a, b) => b.volume24hr - a.volume24hr);
+    } else if (currentVolumeDisplay === 'all') {
+        sorted = [...filtered].sort((a, b) => b.createdAt - a.createdAt);
+    } else {
+        sorted = sortMarkets(filtered, currentSortMethod);
+    }
 
     // Render markets
     sorted.forEach(m => {
@@ -418,71 +648,102 @@ function renderMarkets(activeFilter = 'All') {
             displayVolume = formatVolume(m.volume24hr + m.volume * 0.1);
         }
 
-        let buttonsHtml = `
-            <div class="card-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                ${m.options.map((opt, index) => {
-            const isLastOdd = (m.options.length % 2 !== 0) && (index === m.options.length - 1);
 
-            // House color mapping
-            let houseColor = 'rgba(255,255,255,0.05)'; // Default
-            let textColor = 'var(--text-primary)';
-
+        card.innerHTML = `
+            <div class="card-header">
+                <img src="${m.icon}" class="card-icon">
+                <h3 class="card-title">${m.title}</h3>
+            </div>
+            
+            <div class="card-options">
+                ${m.options.map(opt => {
             const name = opt.name.toLowerCase();
-            if (name.includes('nagarjuna')) {
-                houseColor = 'rgba(239, 68, 68, 0.15)'; // Red
-                textColor = '#ef4444';
-            } else if (name.includes('nalanda')) {
-                houseColor = 'rgba(59, 130, 246, 0.15)'; // Blue
-                textColor = '#3b82f6';
-            } else if (name.includes('vijaynagar')) {
-                houseColor = 'rgba(245, 158, 11, 0.15)'; // Yellow
+            let houseColor = 'rgba(255, 255, 255, 0.1)';
+            let textColor = '#fff';
+
+            if (name.includes('vijaynagar')) {
+                houseColor = 'rgba(245, 158, 11, 0.15)';
                 textColor = '#f59e0b';
             } else if (name.includes('taxila')) {
-                houseColor = 'rgba(16, 185, 129, 0.15)'; // Green
+                houseColor = 'rgba(16, 185, 129, 0.15)';
                 textColor = '#10b981';
+            } else if (name.includes('nalanda')) {
+                houseColor = 'rgba(59, 130, 246, 0.15)';
+                textColor = '#3b82f6';
+            } else if (name.includes('nagarjuna')) {
+                houseColor = 'rgba(239, 68, 68, 0.15)';
+                textColor = '#ef4444';
             } else if (name === 'yes') {
-                houseColor = 'rgba(16, 185, 129, 0.15)'; // Green
+                houseColor = 'rgba(16, 185, 129, 0.15)';
                 textColor = '#10b981';
             } else if (name === 'no') {
-                houseColor = 'rgba(239, 68, 68, 0.15)'; // Red
+                houseColor = 'rgba(239, 68, 68, 0.15)';
                 textColor = '#ef4444';
             }
 
             return `
-                    <button class="vote-btn" style="background: ${houseColor}; border: 1px solid var(--border-light); color: ${textColor}; margin-bottom: 0; ${isLastOdd ? 'grid-column: span 2;' : ''}">
-                        ${opt.name.toUpperCase()}
-                    </button>
-                `}).join('')}
-            </div>
-        `;
-
-        card.innerHTML = `
-            ${m.isNew ? '<div class="new-badge">NEW</div>' : ''}
-            <div class="card-header">
-                <img src="${m.icon}" class="card-icon" style="margin: 0 auto;">
-                <h3 class="card-title" style="height: 48px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${m.title}</h3>
-                <div style="font-size: 0.7rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; margin-top: 8px; text-align: center; width: 100%;">
-                    ${m.tags.includes('HPS Sports') ? 'HPS SPORTS' :
-                m.tags.includes('HPS Politics') ? 'HPS POLITICS' :
-                    m.tags.includes('HPS Culture') ? 'HPS CULTURE' :
-                        m.tags.includes('HPS Academics') ? 'HPS ACADEMICS' : '&nbsp;'}
-                </div>
-            </div>
-            
-            <div class="card-options">
-                ${m.options.map(opt => `
                     <div class="option-row">
                         <span class="option-name">${opt.name}</span>
-                        <span class="option-percent">${opt.percent}%</span>
+                        <div class="option-right">
+                            <button class="vote-btn-p" style="background: ${houseColor}; color: ${textColor};" onclick="event.stopPropagation(); showEventPage('${m.id}');">
+                                ${opt.percent}%
+                            </button>
+                        </div>
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
 
-            ${buttonsHtml}
+            <div class="card-footer">
+                <div class="footer-volume">${displayVolume} Vol.</div>
+                <div class="footer-actions">
+                    <span class="footer-icon" data-tooltip="G 100 bet: G ${(100 / (m.options[0].percent / 100)).toFixed(0)} Potential Return">🎁</span>
+                    <span class="footer-icon ${watchList.has(m.id) ? 'active' : ''}" 
+                          data-tooltip="${watchList.has(m.id) ? 'Remove from Watch List' : 'Add to Watch List'}"
+                          onclick="toggleWatchList(event, '${m.id}')">🔖</span>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
 
-            <div class="card-footer" style="margin-top: 16px;">
-                <span>${displayVolume}</span>
-                <span>🔖</span>
+function renderCompletedEvents() {
+    const grid = document.getElementById('completedEventsGrid');
+    grid.innerHTML = '';
+
+    const completedMarkets = markets.filter(m => m.isCompleted);
+
+    if (completedMarkets.length === 0) {
+        grid.innerHTML = '<p style="color: var(--text-secondary); grid-column: 1/-1; text-align: center;">No completed events yet.</p>';
+        return;
+    }
+
+    completedMarkets.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'market-card animate-in';
+        card.onclick = () => showEventPage(m.id);
+
+        let winnerColor = '#10b981'; // Default green
+        // Find winner color if possible
+        const winnerOpt = m.options.find(o => o.name === m.winningOutcome);
+        if (winnerOpt) winnerColor = winnerOpt.color || winnerColor;
+
+        card.innerHTML = `
+            <div class="card-header">
+                <img src="${m.icon}" class="card-icon">
+                <h3 class="card-title">${m.title}</h3>
+            </div>
+            
+            <div class="outcome-display-container" style="padding: 16px; min-height: 180px; justify-content: center; background: transparent; border: none;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">🏆</div>
+                <div class="outcome-label" style="font-size: 0.8rem;">Winner</div>
+                <div class="outcome-value" style="font-size: 1.5rem; background: ${winnerColor}; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${m.winningOutcome}</div>
+            </div>
+            
+            <div class="card-footer">
+               <div class="vol-stats" style="flex:1; text-align:center; color: var(--text-secondary);">
+                    <span>Ended ${m.endDate.toLocaleDateString()}</span>
+               </div>
             </div>
         `;
         grid.appendChild(card);
@@ -505,14 +766,29 @@ function renderChart(market) {
     `).join('');
 
     const historyLength = 40;
-    const allHistory = generateBalancedHistory(market.options, historyLength);
+    const allHistory = generateBalancedHistory(market.options, historyLength, market);
 
-    // Generate some dates
+    // Generate labels and data based on timeframe
     const labels = [];
     const now = new Date();
+
     for (let i = 0; i < historyLength; i++) {
         const d = new Date(now);
-        d.setDate(d.getDate() - (historyLength - i));
+        if (currentChartTimeframe === '5m') {
+            d.setSeconds(d.getSeconds() - (historyLength - i) * 7.5); // 5 mins total
+        } else if (currentChartTimeframe === '4h') {
+            d.setMinutes(d.getMinutes() - (historyLength - i) * 6); // 4 hours total
+        } else if (currentChartTimeframe === '1d') {
+            d.setMinutes(d.getMinutes() - (historyLength - i) * 36); // 24 hours total
+        } else if (currentChartTimeframe === '3d') {
+            d.setMinutes(d.getMinutes() - (historyLength - i) * 108); // 3 days total
+        } else if (currentChartTimeframe === '1w') {
+            d.setHours(d.getHours() - (historyLength - i) * 4.2); // 1 week total
+        } else if (currentChartTimeframe === '1m') {
+            d.setHours(d.getHours() - (historyLength - i) * 18); // 1 month total
+        } else {
+            d.setDate(d.getDate() - (historyLength - i)); // Default "ALL" (40 days)
+        }
         labels.push(d);
     }
 
@@ -563,8 +839,11 @@ function renderChart(market) {
                         maxTicksLimit: 6,
                         callback: function (value, index) {
                             const date = labels[index];
+                            if (['5m', '4h', '1d'].includes(currentChartTimeframe)) {
+                                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            }
                             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            return months[date.getMonth()];
+                            return months[date.getMonth()] + ' ' + date.getDate();
                         }
                     }
                 },
@@ -665,7 +944,7 @@ function renderChart(market) {
     });
 }
 
-function generateBalancedHistory(options, length) {
+function generateBalancedHistory(options, length, market) {
     const numOptions = options.length;
     const histories = Array.from({ length: numOptions }, () => []);
 
@@ -696,21 +975,31 @@ function generateBalancedHistory(options, length) {
         });
     }
 
-    // 3. Final State: Current actual percentages
+    // 3. Final State: Current actual percentages OR Completed State
     options.forEach((opt, idx) => {
-        histories[idx][length - 1] = opt.percent;
+        if (market.isCompleted) {
+            // Force winner to 100, others to 0
+            const isWinner = opt.name === market.winningOutcome;
+            histories[idx][length - 1] = isWinner ? 100 : 0;
+            // Smooth transition to final for the last few points
+            for (let k = 1; k <= 5; k++) {
+                histories[idx][length - 1 - k] = isWinner ? (100 - k * 2) : (0 + k * 2);
+            }
+        } else {
+            histories[idx][length - 1] = opt.percent;
+        }
     });
 
     return histories;
 }
 
 const subCategoryMap = {
-    'Trending': ['All', 'HPS', 'Football', 'Cricket', 'Basketball', 'Hockey', 'Tennis', 'Badminton', 'Exams', 'Science Fair'],
-    'New': ['All', 'HPS', 'Politics', 'Sports', 'Culture', 'Academics'],
-    'Politics': ['All', 'HPS'],
-    'Sports': ['All', 'HPS', 'Football', 'Cricket', 'Basketball', 'Hockey', 'Tennis', 'Badminton'],
-    'Culture': ['All', 'HPS'],
-    'Academics': ['All', 'HPS', 'Exams', 'Science Fair']
+    'Trending': ['All', 'Sports', 'Academics', 'Science Fair'],
+    'New': ['All', 'Politics', 'Sports', 'Culture', 'Academics'],
+    'Politics': ['All'],
+    'Sports': ['All', 'Football', 'Cricket', 'Basketball', 'Hockey', 'Tennis', 'Badminton', 'Swimming', 'Shooting'],
+    'Culture': ['All'],
+    'Academics': ['All', 'Exams', 'Science Fair']
 };
 
 function updateSubCategories(mainCat) {
@@ -746,6 +1035,26 @@ document.addEventListener('DOMContentLoaded', () => {
         navDropdown.classList.toggle('show');
     };
 
+    // Leaderboard Navigation
+    document.getElementById('leaderboardBtn').onclick = (e) => {
+        e.preventDefault();
+        showLeaderboardPage();
+        navDropdown.classList.remove('show');
+    };
+
+    // Completed Events Navigation
+    const completedEventsBtn = document.getElementById('completedEventsBtn');
+    if (completedEventsBtn) {
+        completedEventsBtn.onclick = (e) => {
+            e.preventDefault();
+            showCompletedEventsPage();
+            navDropdown.classList.remove('show');
+        };
+    }
+
+    // Leaderboard Back Button
+    document.querySelector('.lb-back-btn').onclick = () => showHomepage();
+
     // Dark Mode Toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
     darkModeToggle.onclick = (e) => {
@@ -780,6 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.cat-item').forEach(v => v.classList.remove('active'));
         item.classList.add('active');
 
+        document.getElementById('searchInput').value = '';
         const cat = item.dataset.cat;
         updateSubCategories(cat);
         renderMarkets(cat);
@@ -793,6 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.sub-cat-pill').forEach(v => v.classList.remove('active'));
         pill.classList.add('active');
 
+        document.getElementById('searchInput').value = '';
         const cat = pill.innerText;
         renderMarkets(cat);
     };
@@ -808,4 +1119,104 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMarkets(document.querySelector('.sub-cat-pill.active')?.innerText || 'All');
         };
     });
+
+    // --- NEW: Modal Logic ---
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalClose = document.getElementById('modalClose');
+    const hiwFlow = document.getElementById('hiwFlow');
+    const authFlow = document.getElementById('authFlow');
+
+    const openModal = (type) => {
+        modalOverlay.classList.add('show');
+        hiwFlow.style.display = type === 'hiw' ? 'block' : 'none';
+        authFlow.style.display = type === 'auth' ? 'block' : 'none';
+        if (type === 'hiw') resetHiw();
+    };
+
+    const closeModal = () => modalOverlay.classList.remove('show');
+
+    const resetHiw = () => {
+        document.querySelectorAll('.hiw-step').forEach(s => s.classList.remove('active'));
+        document.querySelector('.hiw-step[data-step="1"]').classList.add('active');
+    };
+
+    // Event Listeners
+    document.getElementById('howItWorksBtn').onclick = (e) => {
+        e.preventDefault();
+        openModal('hiw');
+    };
+
+    document.getElementById('loginBtn').onclick = (e) => {
+        e.preventDefault();
+        openModal('auth');
+    };
+
+    document.getElementById('signupBtn').onclick = () => openModal('auth');
+
+    modalClose.onclick = closeModal;
+    modalOverlay.onclick = (e) => {
+        if (e.target === modalOverlay) closeModal();
+    };
+
+    // HIW Flow Stepping
+    document.querySelectorAll('.next-hiw-step').forEach(btn => {
+        btn.onclick = () => {
+            const currentStep = btn.closest('.hiw-step');
+            const nextStepNum = parseInt(currentStep.dataset.step) + 1;
+            const nextStep = document.querySelector(`.hiw-step[data-step="${nextStepNum}"]`);
+
+            if (nextStep) {
+                currentStep.classList.remove('active');
+                nextStep.classList.add('active');
+            }
+        };
+    });
+
+    // Finish HIW -> Auth
+    document.getElementById('finishHiw').onclick = () => {
+        openModal('auth');
+    };
+
+    // Chart Timeframe Selection
+    document.querySelector('.timeframe-selector').onclick = (e) => {
+        const btn = e.target.closest('.tf-btn');
+        if (!btn) return;
+
+        document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        currentChartTimeframe = btn.dataset.tf;
+        if (currentMarket) renderChart(currentMarket);
+    };
+
+    // Leaderboard Timeframe Selection
+    const lbTimeframeSelector = document.querySelector('.lb-tf-selector');
+    if (lbTimeframeSelector) {
+        lbTimeframeSelector.onclick = (e) => {
+            const btn = e.target.closest('.tf-btn');
+            if (!btn) return;
+
+            lbTimeframeSelector.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Simulate filtering behavior check
+            // For now, just a visual update
+        };
+    }
+
+    // Leaderboard Category Simulation
+    const lbCatDropdown = document.querySelector('.cat-dropdown-sim');
+    if (lbCatDropdown) {
+        lbCatDropdown.onclick = () => {
+            // Simple toggle simulation
+            const textSpan = lbCatDropdown.querySelector('span');
+            if (textSpan.innerText === 'All Categories') {
+                textSpan.innerText = 'Sports';
+                lbCatDropdown.style.borderColor = 'var(--accent-blue)';
+            } else {
+                textSpan.innerText = 'All Categories';
+                lbCatDropdown.style.borderColor = 'var(--border-color)';
+            }
+        };
+    }
 });
