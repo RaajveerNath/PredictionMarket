@@ -413,14 +413,13 @@ function initializeBettingInterface(market) {
         </div>
 
         <div class="quick-btns-row">
-            <button class="q-btn" data-amount="1">+1</button>
-            <button class="q-btn" data-amount="10">+10</button>
-            <button class="q-btn" data-amount="100">+100</button>
-            <button class="q-btn" data-amount="1000">+1,000</button>
-            <button class="q-btn q-btn-neg" data-amount="-1">-1</button>
-            <button class="q-btn q-btn-neg" data-amount="-10">-10</button>
-            <button class="q-btn q-btn-neg" data-amount="-100">-100</button>
-            <button class="q-btn q-btn-neg" data-amount="-1000">-1,000</button>
+            <div class="quick-plus-grid">
+                <button class="q-btn" data-amount="1">+1</button>
+                <button class="q-btn" data-amount="10">+10</button>
+                <button class="q-btn" data-amount="100">+100</button>
+                <button class="q-btn" data-amount="1000">+1,000</button>
+            </div>
+            <button class="q-btn q-btn-neg" id="minusBtn" style="width: 100%; margin-top: 8px; font-size: 1.2rem; height: 44px;">−</button>
         </div>
 
         <button class="trade-button-main" id="tradeButtonMain">
@@ -468,15 +467,49 @@ function initializeBettingInterface(market) {
     });
 
     quickButtons.forEach(btn => {
+        if (btn.id === 'minusBtn') return; // Handled separately below
         btn.onclick = () => {
             if (btn.dataset.amount) {
                 currentBetAmount += parseInt(btn.dataset.amount);
             }
-            // Ensure bet amount never goes below zero
             if (currentBetAmount < 0) currentBetAmount = 0;
             updateBettingDisplay();
         };
     });
+
+    // --- Hold to Reduce Logic ---
+    const minusBtn = document.getElementById('minusBtn');
+    let holdTimer, holdInterval;
+
+    const reduceOnce = () => {
+        if (currentBetAmount > 0) {
+            currentBetAmount--;
+            updateBettingDisplay();
+        }
+    };
+
+    minusBtn.addEventListener('mousedown', () => {
+        reduceOnce();
+        holdTimer = setTimeout(() => {
+            holdInterval = setInterval(reduceOnce, 40); // Fast repeat
+        }, 400); // 400ms delay before repeat
+    });
+
+    const clearTimers = () => {
+        clearTimeout(holdTimer);
+        clearInterval(holdInterval);
+    };
+
+    minusBtn.addEventListener('mouseup', clearTimers);
+    minusBtn.addEventListener('mouseleave', clearTimers);
+    minusBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        reduceOnce();
+        holdTimer = setTimeout(() => {
+            holdInterval = setInterval(reduceOnce, 40);
+        }, 400);
+    });
+    minusBtn.addEventListener('touchend', clearTimers);
 
     tradeButton.onclick = () => {
         if (currentBetAmount <= 0) {

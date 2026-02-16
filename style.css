@@ -1079,10 +1079,15 @@ body.light-mode .toggle-knob {
 }
 
 .quick-btns-row {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.quick-plus-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
-    margin-bottom: 24px;
 }
 
 .q-btn {
