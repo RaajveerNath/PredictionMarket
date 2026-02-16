@@ -155,7 +155,7 @@ const staticMarkets = [
 
 const markets = [...generatedMarkets, ...staticMarkets];
 
-const userBets = new Set();
+const userPositions = {}; // Format: { "marketId_outcomeName": { shares: number, avgPrice: number } }
 const watchList = new Set();
 
 let userBalance = 10000;
@@ -263,6 +263,18 @@ function showEventPage(marketId) {
     if (market.isCompleted) {
         showOutcomeWidget(market);
     } else {
+        // Reset trading mode to buy
+        currentTradeMode = 'buy';
+        const amountLabel = document.querySelector('.amount-label');
+        const amountIcon = document.querySelector('.amount-display-input-wrapper img');
+        if (amountLabel) amountLabel.innerText = 'Amount (Credits)';
+        if (amountIcon) amountIcon.src = 'bucks.png';
+        const tabs = document.querySelectorAll('.trade-tab-simple');
+        tabs.forEach(t => {
+            t.classList.remove('active');
+            if (t.dataset.action === 'buy') t.classList.add('active');
+        });
+
         initializeBettingInterface(market);
     }
 }
@@ -461,6 +473,18 @@ function initializeBettingInterface(market) {
             tradeTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentTradeMode = tab.dataset.action;
+
+            // Update label based on mode
+            const amountLabel = document.querySelector('.amount-label');
+            const amountIcon = document.querySelector('.amount-display-input-wrapper img');
+            if (currentTradeMode === 'buy') {
+                amountLabel.innerText = 'Amount (Credits)';
+                amountIcon.src = 'bucks.png';
+            } else {
+                amountLabel.innerText = 'Shares to Sell';
+                amountIcon.src = 'brain.png'; // Using a different icon for shares
+            }
+
             updateBettingDisplay();
         };
     });
@@ -485,41 +509,83 @@ function initializeBettingInterface(market) {
     });
 
     tradeButton.onclick = () => {
-        if (currentBetAmount <= 0) {
-            alert("Please enter an amount to trade.");
-            return;
-        }
+        const amount = currentBetAmount;
+        const outcomeOption = currentMarket.options.find(opt => opt.name === currentOutcome);
+        const priceDecimal = outcomeOption.percent / 100;
+        const posKey = `${currentMarket.id}_${currentOutcome}`;
 
         if (currentTradeMode === 'buy') {
-            if (currentBetAmount > userBalance) {
+            if (amount <= 0) {
+                alert("Please enter an amount to trade.");
+                return;
+            }
+            if (amount > userBalance) {
                 alert("Insufficient balance!");
                 return;
             }
 
-            userBalance -= currentBetAmount;
-            userBets.add(market.id);
+            const sharesBought = amount / priceDecimal;
+            userBalance -= amount;
+
+            if (!userPositions[posKey]) {
+                userPositions[posKey] = { shares: 0, avgPrice: priceDecimal };
+            } else {
+                // Weighted average price (optional but good)
+                const totalCost = (userPositions[posKey].shares * userPositions[posKey].avgPrice) + amount;
+                userPositions[posKey].shares += sharesBought;
+                userPositions[posKey].avgPrice = totalCost / userPositions[posKey].shares;
+            }
+            userPositions[posKey].shares = Math.round(userPositions[posKey].shares); // Keep it clean
+
             updateBalanceUI();
 
-            // Custom notification
+            // Notify
             const notification = document.createElement('div');
-            notification.className = 'watchlist-popup'; // Reusing style for consistency
+            notification.className = 'watchlist-popup';
             notification.style.background = 'var(--accent-blue)';
-            notification.innerHTML = `Order Placed: Bought ${currentOutcome} for <img src="bucks.png" class="gbucks-logo-inline"> ${currentBetAmount.toLocaleString()}`;
+            notification.innerHTML = `Position Added: ${userPositions[posKey].shares.toLocaleString()} total shares of ${currentOutcome}`;
             document.body.appendChild(notification);
             setTimeout(() => notification.remove(), 3000);
 
-            // Optional: reset bet amount
             currentBetAmount = 0;
             updateBettingDisplay(true);
+            if (currentVolumeDisplay === 'active') renderMarkets();
 
-            // Refresh grid if on Active filter
-            if (currentVolumeDisplay === 'active') {
-                renderMarkets();
-            }
         } else {
-            // For Sell: simple logic for demonstration
-            userBets.delete(market.id);
-            alert(`Order Placed: Sold ${currentOutcome} shares.`);
+            // Sell logic
+            const currentPosition = userPositions[posKey];
+            if (!currentPosition || currentPosition.shares <= 0) {
+                alert(`You don't own any shares of ${currentOutcome}!`);
+                return;
+            }
+
+            const sharesToSell = amount || currentPosition.shares; // If input is 0, sell all
+
+            if (sharesToSell > currentPosition.shares) {
+                alert(`Insufficient shares! You only own ${currentPosition.shares.toLocaleString()} shares.`);
+                return;
+            }
+
+            const saleProceeds = sharesToSell * priceDecimal;
+            userBalance += saleProceeds;
+            currentPosition.shares -= sharesToSell;
+
+            if (currentPosition.shares <= 0) {
+                delete userPositions[posKey];
+            }
+
+            updateBalanceUI();
+
+            const notification = document.createElement('div');
+            notification.className = 'watchlist-popup';
+            notification.style.background = 'var(--accent-green)';
+            notification.innerHTML = `Sold ${sharesToSell.toLocaleString()} shares for <img src="bucks.png" class="gbucks-logo-inline"> ${saleProceeds.toLocaleString()}`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+
+            currentBetAmount = 0;
+            updateBettingDisplay(true);
+            if (currentVolumeDisplay === 'active') renderMarkets();
         }
     };
 }
@@ -535,6 +601,8 @@ function updateBettingDisplay(syncInput = true) {
 
     // Calculate returns
     const potentialReturn = currentBetAmount > 0 ? (currentBetAmount / priceDecimal) : 0;
+    const posKey = `${currentMarket.id}_${currentOutcome}`;
+    const currentPosition = userPositions[posKey];
 
     // Update DOM
     if (syncInput) {
@@ -543,10 +611,18 @@ function updateBettingDisplay(syncInput = true) {
     }
 
     document.getElementById('statAvgPrice').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + price.toFixed(1);
-    document.getElementById('statPotentialReturn').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + potentialReturn.toFixed(2);
 
-    const actionText = currentTradeMode === 'buy' ? 'Buy' : 'Sell';
-    document.getElementById('tradeButtonMain').innerText = `${actionText} ${currentOutcome}`;
+    if (currentTradeMode === 'buy') {
+        document.getElementById('statPotentialReturn').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + potentialReturn.toFixed(2);
+
+        const actionText = currentPosition ? 'Add more to your position' : `Buy ${currentOutcome}`;
+        document.getElementById('tradeButtonMain').innerText = actionText;
+    } else {
+        const sharesOwned = currentPosition ? currentPosition.shares : 0;
+        const sellValue = sharesOwned * priceDecimal;
+        document.getElementById('statPotentialReturn').innerHTML = `Owned: ${sharesOwned.toLocaleString()} shares (Value: <img src="bucks.png" class="gbucks-logo-inline"> ${sellValue.toFixed(2)})`;
+        document.getElementById('tradeButtonMain').innerText = `Sell ${currentOutcome}`;
+    }
 }
 
 
@@ -629,7 +705,7 @@ function renderMarkets(activeFilter = 'All') {
 
         // --- Volume Toggle Filters ---
         if (currentVolumeDisplay === 'active') {
-            return userBets.has(m.id);
+            return Object.keys(userPositions).some(key => key.startsWith(m.id + "_"));
         }
         if (currentVolumeDisplay === 'watchlist') {
             return watchList.has(m.id);
@@ -689,7 +765,14 @@ function renderMarkets(activeFilter = 'All') {
             displayVolume = formatVolume(m.volume24hr);
         } else if (currentVolumeDisplay === 'all') {
             displayVolume = formatVolume(m.volume);
-        } else { // active
+        } else if (currentVolumeDisplay === 'active') {
+            let totalValue = 0;
+            m.options.forEach(opt => {
+                const pos = userPositions[`${m.id}_${opt.name}`];
+                if (pos) totalValue += pos.shares * (opt.percent / 100);
+            });
+            displayVolume = `<span style="color: var(--accent-green); font-weight: 700;">Value: <img src="bucks.png" class="gbucks-logo-inline"> ${totalValue.toLocaleString()}</span>`;
+        } else { // watchlist
             displayVolume = formatVolume(m.volume24hr + m.volume * 0.1);
         }
 
