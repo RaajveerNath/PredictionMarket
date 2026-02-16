@@ -406,9 +406,9 @@ function initializeBettingInterface(market) {
 
         <div class="amount-container">
             <span class="amount-label">Amount</span>
-            <div class="amount-display">
-                <img src="bucks.png" class="gbucks-icon" style="width: 28px; height: 28px; margin-right: 4px;">
-                <span id="betAmountDisplay">0.</span>
+            <div class="amount-display-input-wrapper">
+                <img src="bucks.png" class="gbucks-icon" style="width: 24px; height: 24px;">
+                <input type="number" id="betAmountInput" class="bet-amount-input" value="0" min="0" step="1">
             </div>
         </div>
 
@@ -419,7 +419,6 @@ function initializeBettingInterface(market) {
                 <button class="q-btn" data-amount="100">+100</button>
                 <button class="q-btn" data-amount="1000">+1,000</button>
             </div>
-            <button class="q-btn q-btn-neg" id="minusBtn" style="width: 100%; margin-top: 8px; font-size: 1.2rem; height: 44px;">−</button>
         </div>
 
         <button class="trade-button-main" id="tradeButtonMain">
@@ -466,50 +465,24 @@ function initializeBettingInterface(market) {
         };
     });
 
+    const betInput = document.getElementById('betAmountInput');
+
+    betInput.oninput = (e) => {
+        let val = parseInt(e.target.value) || 0;
+        if (val < 0) val = 0;
+        currentBetAmount = val;
+        updateBettingDisplay(false); // Update stats but don't re-sync input
+    };
+
     quickButtons.forEach(btn => {
-        if (btn.id === 'minusBtn') return; // Handled separately below
         btn.onclick = () => {
             if (btn.dataset.amount) {
                 currentBetAmount += parseInt(btn.dataset.amount);
             }
             if (currentBetAmount < 0) currentBetAmount = 0;
-            updateBettingDisplay();
+            updateBettingDisplay(true); // Re-sync input
         };
     });
-
-    // --- Hold to Reduce Logic ---
-    const minusBtn = document.getElementById('minusBtn');
-    let holdTimer, holdInterval;
-
-    const reduceOnce = () => {
-        if (currentBetAmount > 0) {
-            currentBetAmount--;
-            updateBettingDisplay();
-        }
-    };
-
-    minusBtn.addEventListener('mousedown', () => {
-        reduceOnce();
-        holdTimer = setTimeout(() => {
-            holdInterval = setInterval(reduceOnce, 40); // Fast repeat
-        }, 400); // 400ms delay before repeat
-    });
-
-    const clearTimers = () => {
-        clearTimeout(holdTimer);
-        clearInterval(holdInterval);
-    };
-
-    minusBtn.addEventListener('mouseup', clearTimers);
-    minusBtn.addEventListener('mouseleave', clearTimers);
-    minusBtn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        reduceOnce();
-        holdTimer = setTimeout(() => {
-            holdInterval = setInterval(reduceOnce, 40);
-        }, 400);
-    });
-    minusBtn.addEventListener('touchend', clearTimers);
 
     tradeButton.onclick = () => {
         if (currentBetAmount <= 0) {
@@ -537,7 +510,7 @@ function initializeBettingInterface(market) {
 
             // Optional: reset bet amount
             currentBetAmount = 0;
-            updateBettingDisplay();
+            updateBettingDisplay(true);
 
             // Refresh grid if on Active filter
             if (currentVolumeDisplay === 'active') {
@@ -551,7 +524,7 @@ function initializeBettingInterface(market) {
     };
 }
 
-function updateBettingDisplay() {
+function updateBettingDisplay(syncInput = true) {
     if (!currentMarket) return;
 
     const outcomeOption = currentMarket.options.find(opt => opt.name === currentOutcome);
@@ -564,7 +537,11 @@ function updateBettingDisplay() {
     const potentialReturn = currentBetAmount > 0 ? (currentBetAmount / priceDecimal) : 0;
 
     // Update DOM
-    document.getElementById('betAmountDisplay').innerText = currentBetAmount + '.';
+    if (syncInput) {
+        const input = document.getElementById('betAmountInput');
+        if (input) input.value = currentBetAmount;
+    }
+
     document.getElementById('statAvgPrice').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + price.toFixed(1);
     document.getElementById('statPotentialReturn').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + potentialReturn.toFixed(2);
 
