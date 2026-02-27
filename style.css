@@ -23,13 +23,20 @@
     --radius-sm: 4px;
 
     --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    /* Chart Colors */
+    --chart-grid: rgba(255, 255, 255, 0.05);
+    --chart-ticks: #5e6773;
+
+    --coin-bg: rgba(245, 158, 11, 0.1);
+    --coin-blend: screen;
 }
 
 body.light-mode {
     --bg-main: #f3f4f6;
     --bg-surface: #ffffff;
     --bg-card: #ffffff;
-    --bg-input: #ffffff;
+    --bg-input: #f9fafb;
 
     --text-primary: #111827;
     --text-secondary: #4b5563;
@@ -37,6 +44,13 @@ body.light-mode {
 
     --border-color: #e5e7eb;
     --border-light: rgba(0, 0, 0, 0.05);
+
+    /* Chart Colors - Light */
+    --chart-grid: rgba(0, 0, 0, 0.05);
+    --chart-ticks: #6b7280;
+
+    --coin-bg: rgba(245, 158, 11, 0.15);
+    --coin-blend: normal;
 }
 
 * {
@@ -512,10 +526,10 @@ body.light-mode .toggle-knob {
     bottom: 100%;
     left: 50%;
     transform: translateX(-50%) translateY(-8px);
-    background: var(--bg-surface);
-    color: white;
-    padding: 6px 10px;
-    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 0.75rem;
     font-weight: 600;
     white-space: nowrap;
@@ -523,7 +537,7 @@ body.light-mode .toggle-knob {
     pointer-events: none;
     transition: all 0.2s;
     border: 1px solid var(--border-color);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     z-index: 10;
 }
 
@@ -544,24 +558,23 @@ body.light-mode .toggle-knob {
 }
 
 .market-card {
-    background: #1a1e26;
-    /* Darker, dashboard card color */
-    border: 1px solid #2d333f;
-    border-radius: 12px;
-    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
     height: 100%;
     position: relative;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .market-card:hover {
-    border-color: #3b82f6;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    border-color: var(--accent-blue);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
     z-index: 100;
 }
 
@@ -582,10 +595,10 @@ body.light-mode .toggle-knob {
 }
 
 .card-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
     line-height: 1.4;
-    color: white;
+    color: var(--text-primary);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -630,15 +643,24 @@ body.light-mode .toggle-knob {
     font-weight: 800;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     min-width: 65px;
     text-align: center;
+    position: relative;
+    box-shadow: 0 4px 0px rgba(0, 0, 0, 0.2);
+    transform: translateY(0);
 }
 
 .vote-btn-p:hover {
     filter: brightness(1.2);
-    transform: scale(1.03);
+    transform: translateY(-4px);
     border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4), 0 6px 0px rgba(0, 0, 0, 0.2);
+}
+
+.vote-btn-p:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px rgba(0, 0, 0, 0.2);
 }
 
 .card-footer {
@@ -918,6 +940,16 @@ body.light-mode .toggle-knob {
     position: relative;
     display: flex;
     align-items: center;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+    padding: 4px 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.outcome-select-wrapper:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.15);
 }
 
 .widget-outcome-name-dropdown {
@@ -938,7 +970,7 @@ body.light-mode .toggle-knob {
 
 .dropdown-chevron {
     position: absolute;
-    right: 0;
+    right: 16px;
     top: 50%;
     transform: translateY(-50%);
     pointer-events: none;
@@ -1095,6 +1127,7 @@ body.light-mode .toggle-knob {
 
 .bet-amount-input {
     -moz-appearance: textfield;
+    appearance: none;
 }
 
 .quick-btns-row {
@@ -1118,12 +1151,23 @@ body.light-mode .toggle-knob {
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    box-shadow: 0 4px 0px rgba(255, 255, 255, 0.05);
+    transform: translateY(0);
 }
 
 .q-btn:hover {
     background: var(--bg-main);
-    border-color: var(--accent-blue);
+    filter: brightness(1.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4), 0 6px 0px rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color);
+}
+
+.q-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px rgba(255, 255, 255, 0.05);
 }
 
 .q-btn-neg:hover {
@@ -1142,11 +1186,21 @@ body.light-mode .toggle-knob {
     font-weight: 700;
     cursor: pointer;
     margin-bottom: 24px;
-    transition: filter 0.2s;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    box-shadow: 0 4px 0px #1e4baf;
+    transform: translateY(0);
 }
 
 .trade-button-main:hover {
     filter: brightness(1.1);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 15px rgba(37, 99, 235, 0.4), 0 6px 0px #1e4baf;
+}
+
+.trade-button-main:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0px #1e4baf;
 }
 
 .trade-stats-footer {
@@ -1384,7 +1438,7 @@ body.light-mode .toggle-knob {
     max-width: 500px;
     position: relative;
     padding: 32px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
     transform: scale(0.95);
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1395,16 +1449,25 @@ body.light-mode .toggle-knob {
 
 .modal-close {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
     color: var(--text-secondary);
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    z-index: 1000;
 }
 
 .modal-close:hover {
     color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* How It Works Specifics */
@@ -1576,6 +1639,9 @@ body.light-mode .toggle-knob {
     color: #111827;
     font-size: 1.4rem;
     font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .slip-win {
@@ -1583,6 +1649,9 @@ body.light-mode .toggle-knob {
     font-weight: 700;
     font-size: 0.75rem;
     margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .slip-btn-y {
@@ -1705,16 +1774,19 @@ body.light-mode .toggle-knob {
 .auth-divider {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 20px 0;
+    width: 100%;
+    gap: 16px;
+    margin: 24px 0;
     color: var(--text-muted);
     font-size: 0.8rem;
-    font-weight: 600;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .auth-divider::before,
 .auth-divider::after {
-    content: '';
+    content: "";
     flex: 1;
     height: 1px;
     background: var(--border-color);
@@ -1728,11 +1800,11 @@ body.light-mode .toggle-knob {
 
 .auth-input {
     flex: 1;
-    background: var(--bg-card);
+    background: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 12px 16px;
-    color: white;
+    color: var(--text-primary);
     font-family: inherit;
 }
 
@@ -1856,7 +1928,7 @@ body.light-mode .toggle-knob {
 
 .lb-tf-selector {
     display: flex;
-    background: #1e232f !important;
+    background: var(--bg-card) !important;
     padding: 2px;
     border-radius: 10px;
     border: 1px solid var(--border-color);
@@ -1875,13 +1947,14 @@ body.light-mode .toggle-knob {
 }
 
 .lb-tf-selector .tf-btn.active {
-    background: #2d333f !important;
+    background: var(--bg-surface) !important;
     color: var(--text-primary) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cat-dropdown-sim {
     padding: 10px 16px;
-    background: #1e232f;
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 10px;
     cursor: pointer;
@@ -2213,7 +2286,7 @@ body.light-mode .toggle-knob {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--coin-bg);
     border: 1px solid rgba(245, 158, 11, 0.2);
     padding: 6px 14px;
     border-radius: 50px;
@@ -2234,7 +2307,7 @@ body.light-mode .toggle-knob {
     height: 20px;
     object-fit: cover;
     border-radius: 50%;
-    mix-blend-mode: screen;
+    mix-blend-mode: var(--coin-blend);
 }
 
 .gbucks-logo-inline {
@@ -2244,5 +2317,136 @@ body.light-mode .toggle-knob {
     margin-right: 4px;
     object-fit: cover;
     border-radius: 50%;
-    mix-blend-mode: screen;
+    mix-blend-mode: var(--coin-blend);
+}
+
+/* To Win Section - Polymarket Style */
+.to-win-container {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+.to-win-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 4px;
+}
+
+.to-win-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.to-win-amount {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--accent-green);
+    line-height: 1;
+}
+
+.avg-price-subtext {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.avg-price-subtext .info-icon {
+    font-size: 0.75rem;
+    opacity: 0.6;
+    cursor: help;
+}
+
+#statAvgPrice {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Ensure trade-stats-footer is replaced by to-win-container in JS or styled similarly */
+.trade-stats-footer {
+    display: none;
+    /* We will use to-win-container instead */
+}
+
+.trade-button-main {
+    margin-bottom: 0;
+    /* Adjust margin since container has border-top */
+}
+
+/* Auth Styles */
+.auth-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.google-btn:hover {
+    background: var(--bg-card);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+
+
+.auth-inputs-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-input-full {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-family: var(--font-main);
+    outline: none;
+    box-sizing: border-box;
+    font-size: 1rem;
+}
+
+.auth-input-full:focus {
+    border-color: var(--accent-blue);
+}
+
+.auth-submit-full {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent-blue);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.auth-submit-full:hover {
+    filter: brightness(1.1);
 }

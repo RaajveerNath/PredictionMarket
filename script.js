@@ -1,11 +1,22 @@
+import {
+    auth,
+    signUp,
+    logIn,
+    logInWithGoogle,
+    logOut,
+    getUserData,
+    saveUserData
+} from "./auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 /**
  * Mock Data - Polymarket Style
  */
 const houses = [
-    { name: 'Nagarjuna', color: '#ef4444' },
-    { name: 'Nalanda', color: '#3b82f6' },
-    { name: 'Vijaynagar', color: '#f59e0b' },
-    { name: 'Taxila', color: '#10b981' }
+    { name: 'Red House', color: '#ef4444' },
+    { name: 'Blue House', color: '#3b82f6' },
+    { name: 'Yellow House', color: '#f59e0b' },
+    { name: 'Green House', color: '#10b981' }
 ];
 
 const sports = [
@@ -57,14 +68,27 @@ sports.forEach(sport => {
                 tags: ['Sports', sport.name, 'Fixture'],
                 isNew: true,
                 options: [
-                    { name: h1.name, percent: 52, color: h1.color },
-                    { name: h2.name, percent: 48, color: h2.color }
+                    { name: h1.name, percent: 52, color: h1.color, pool: 52000 },
+                    { name: h2.name, percent: 48, color: h2.color, pool: 48000 }
                 ],
                 chartData: [45, 48, 50, 51, 52]
             });
         }
     }
 });
+
+// Initialize pools for markets without them
+function initializePools(marketList) {
+    marketList.forEach(m => {
+        const totalBaseLiquidity = m.liquidity || 100000;
+        m.options.forEach(opt => {
+            if (opt.pool === undefined) {
+                opt.pool = (opt.percent / 100) * totalBaseLiquidity;
+            }
+        });
+    });
+}
+
 
 const staticMarkets = [
     {
@@ -127,46 +151,197 @@ const staticMarkets = [
         options: houses.map(h => ({ ...h, percent: 25 })),
         chartData: [25, 28, 30, 33, 35]
     },
-    {
-        id: 'vice-principal-hps',
-        title: 'Who will be appointed as the next Vice-Principal of HPS',
-        icon: 'politics.png',
-        volume: 8500,
-        volume24hr: 1250,
-        liquidity: 17000,
-        createdAt: new Date('2026-01-18'),
-        endDate: new Date('2026-06-30'),
-        category: 'Politics',
-        tags: ['Politics'],
-        isNew: false,
-        options: [
-            { name: houses[0].name + ' Faculty', percent: 35, color: houses[0].color },
-            { name: houses[1].name + ' Faculty', percent: 25, color: houses[1].color },
-            { name: houses[2].name + ' Faculty', percent: 20, color: houses[2].color },
-            { name: houses[3].name + ' Faculty', percent: 20, color: houses[3].color }
-        ],
-        chartData: [10, 20, 35, 40, 45],
-        isCompleted: true,
-        winningOutcome: 'Vijaynagar Faculty'
-    }
+    // Example Completed Market
+
     // Example Completed Market
 
 ];
 
 const markets = [...generatedMarkets, ...staticMarkets];
+initializePools(markets);
 
-const userPositions = {}; // Format: { "marketId_outcomeName": { shares: number, avgPrice: number } }
+let isInitialized = false; // Flag to prevent saving before loading is done
+
+// --- Persistence Helpers ---
+async function saveState() {
+    localStorage.setItem('spiral_balance', userBalance);
+    localStorage.setItem('spiral_positions', JSON.stringify(userPositions));
+    localStorage.setItem('spiral_watchlist', JSON.stringify(Array.from(watchList)));
+    localStorage.setItem('spiral_resolved_stats', JSON.stringify(resolvedStatistics));
+
+    // Save market pools
+    const pools = {};
+    markets.forEach(m => {
+        pools[m.id] = m.options.map(o => ({ name: o.name, pool: o.pool }));
+    });
+    localStorage.setItem('spiral_market_pools', JSON.stringify(pools));
+
+    // Sync with Firestore if logged in
+    if (auth.currentUser && isInitialized) {
+        try {
+            await saveUserData(auth.currentUser.uid, {
+                balance: userBalance,
+                positions: userPositions,
+                watchlist: Array.from(watchList)
+            });
+        } catch (err) {
+            console.error("Firestore sync error:", err);
+        }
+    }
+}
+
+async function loadState(uid = null) {
+    isInitialized = false; // Block saving during load process
+
+    // Reset state to defaults
+    // If we have a UID, the base is 10,000 (starting gift)
+    // If not, the base is 0 (guest mode)
+    userBalance = uid ? 10000 : 0;
+
+    Object.keys(userPositions).forEach(key => delete userPositions[key]);
+    watchList.clear();
+
+    if (uid) {
+        // Load from Firestore with retries
+        let data = null;
+        for (let i = 0; i < 3; i++) {
+            data = await getUserData(uid);
+            if (data) break;
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        if (data) {
+            userBalance = data.balance ?? 10000;
+            if (data.positions) Object.assign(userPositions, data.positions);
+            if (data.watchlist) data.watchlist.forEach(id => watchList.add(id));
+
+            updateBalanceUI();
+            updateHeaderUserUI(data.username, auth.currentUser.email);
+
+            // Clean guest cache to prevent leakage
+            localStorage.removeItem('spiral_balance');
+            localStorage.removeItem('spiral_positions');
+            return;
+        }
+
+        // New user or retry failed - use default 10k
+        updateBalanceUI();
+        return;
+    }
+
+    // Guest Mode: Always start at 0
+    userBalance = 0;
+    updateBalanceUI();
+    isInitialized = true;
+
+    // Cleanup local storage once to wipe out old corrupted balances
+    localStorage.removeItem('spiral_balance');
+    localStorage.removeItem('spiral_positions');
+}
+
+function recalculateOdds(market) {
+    if (market.isCompleted) return;
+    const totalPool = market.options.reduce((sum, opt) => sum + opt.pool, 0);
+    market.options.forEach(opt => {
+        opt.percent = parseFloat(((opt.pool / totalPool) * 100).toFixed(1));
+        if (opt.percent < 1.0) opt.percent = 1.0; // Min price
+        if (opt.percent > 99.0) opt.percent = 99.0; // Max price
+    });
+}
+
+const userPositions = {};
 const watchList = new Set();
+const resolvedStatistics = {}; // format: { marketId: { net: number, investment: number } }
+let userBalance = 0;
 
-let userBalance = 10000;
+// Load state immediately
+loadState();
+
+/**
+ * Automatically sells positions and pays out user balance for a completed market
+ */
+function resolveMarket(marketId, winningOutcome) {
+    const market = markets.find(m => m.id === marketId);
+    if (!market) return;
+
+    market.isCompleted = true;
+    market.winningOutcome = winningOutcome;
+
+    // Auto-payout logic: Scan user positions for this market
+    let totalPayout = 0;
+    let totalInitialCost = 0;
+    let payoutCount = 0;
+
+    Object.keys(userPositions).forEach(key => {
+        if (key.startsWith(marketId + "_")) {
+            const outcomeName = key.split('_')[1];
+            const pos = userPositions[key];
+            totalInitialCost += pos.shares * pos.avgPrice;
+
+            if (outcomeName === winningOutcome) {
+                // Winning share is worth 100 credits
+                totalPayout += pos.shares * 100;
+                payoutCount++;
+            }
+            // Losing positions are just cleared
+            delete userPositions[key];
+        }
+    });
+
+    if (totalInitialCost > 0) {
+        resolvedStatistics[marketId] = {
+            investment: totalInitialCost,
+            payout: totalPayout,
+            net: totalPayout - totalInitialCost
+        };
+    }
+
+    if (totalPayout > 0) {
+        userBalance += totalPayout;
+        updateBalanceUI();
+        saveState(); // Persist changes
+
+        // Notification
+        setTimeout(() => {
+            const notification = document.createElement('div');
+            notification.className = 'watchlist-popup';
+            notification.style.background = 'var(--accent-green)';
+            notification.style.color = 'white';
+            notification.innerHTML = `🏆 Market Resolved! Auto-Redeemed ${payoutCount} position(s) for <img src="bucks.png" class="gbucks-logo-inline"> ${totalPayout.toLocaleString()}`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }, 500);
+    }
+}
+
+// Markets are live by default
+Object.keys(resolvedStatistics).forEach(key => delete resolvedStatistics[key]); // Clear experimental stats
+// REMOVED GLOBAL saveState() TO PREVENT LEAKAGE
 
 function updateBalanceUI() {
     const balEl = document.getElementById('userBalanceText');
     if (balEl) balEl.innerText = userBalance.toLocaleString();
 }
 
-// Initial call
-setTimeout(updateBalanceUI, 100);
+function updateHeaderUserUI(username, email) {
+    const nameEl = document.querySelector('.user-name');
+    const handleEl = document.querySelector('.user-handle');
+    const authButtons = document.getElementById('authButtons');
+    const user = auth.currentUser;
+
+    const displayUsername = username || (user ? user.displayName : null) || "User Account";
+    if (nameEl) nameEl.innerText = displayUsername;
+    if (handleEl) handleEl.innerText = email ? `@${email.split('@')[0]}` : "@guest";
+
+    if (user) {
+        if (authButtons) authButtons.style.display = 'none';
+        const avatar = document.querySelector('.user-avatar-small');
+        if (avatar) avatar.style.background = getRandomGradient();
+    } else {
+        if (authButtons) authButtons.style.display = 'flex';
+    }
+}
+
 
 let currentChart = null;
 let currentSortMethod = 'newest';
@@ -209,6 +384,7 @@ function showHomepage() {
         document.querySelectorAll('.volume-option').forEach(v => v.classList.remove('active'));
         document.querySelector('[data-volume="24hr"]').classList.add('active');
     }
+
 
     renderMarkets();
 }
@@ -260,8 +436,29 @@ function showEventPage(marketId) {
 
     // Initialize betting interface for this market
     // Initialize betting interface or show outcome
+    const hasPosition = Object.keys(userPositions).some(key => key.startsWith(market.id + "_") && userPositions[key].shares > 0.001);
+
     if (market.isCompleted) {
-        showOutcomeWidget(market);
+        if (hasPosition) {
+            // Set prices to terminal values (100 for winner, 0 for others) for selling/redeeming
+            market.options.forEach(opt => {
+                opt.percent = (opt.name === market.winningOutcome) ? 100 : 1; // using 1 instead of 0 to avoid div by zero in some potential logic
+            });
+
+            currentTradeMode = 'sell';
+            initializeBettingInterface(market);
+
+            // Force sell mode visuals
+            const tabs = document.querySelectorAll('.trade-tab-simple');
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                if (t.dataset.action === 'sell') t.classList.add('active');
+            });
+            const amountLabel = document.querySelector('.amount-label');
+            if (amountLabel) amountLabel.innerText = 'Estimated Proceeds';
+        } else {
+            showOutcomeWidget(market);
+        }
     } else {
         // Reset trading mode to buy
         currentTradeMode = 'buy';
@@ -425,11 +622,8 @@ function initializeBettingInterface(market) {
         </div>
 
         <div class="quick-btns-row">
-            <div class="quick-plus-grid">
-                <button class="q-btn" data-amount="1">+1</button>
-                <button class="q-btn" data-amount="10">+10</button>
-                <button class="q-btn" data-amount="100">+100</button>
-                <button class="q-btn" data-amount="1000">+1,000</button>
+            <div class="quick-plus-grid" id="quickAmountContainer">
+                <!-- Buttons injected via JS based on mode -->
             </div>
         </div>
 
@@ -437,14 +631,14 @@ function initializeBettingInterface(market) {
             Trade
         </button>
 
-        <div class="trade-stats-footer" id="tradeStatsFooter">
-            <div class="stat-row">
-                <span>Avg price</span>
-                <span id="statAvgPrice">0¢</span>
+        <!-- To Win Section (Polymarket Style) -->
+        <div class="to-win-container">
+            <div class="to-win-header">
+                <span class="to-win-label">To win 💸</span>
+                <span id="statPotentialReturn" class="to-win-amount">$0.00</span>
             </div>
-            <div class="stat-row">
-                <span>Potential return</span>
-                <span id="statPotentialReturn" style="color: var(--accent-green);"><img src="bucks.png" class="gbucks-logo-inline"> 0.00</span>
+            <div class="avg-price-subtext">
+                Avg. Price <span id="statAvgPrice">0¢</span> <span class="info-icon">ⓘ</span>
             </div>
         </div>
 
@@ -465,6 +659,7 @@ function initializeBettingInterface(market) {
 
     outcomeSelector.onchange = (e) => {
         currentOutcome = e.target.value;
+        renderQuickButtons(); // Must refresh % buttons for the new outcome's position
         updateBettingDisplay();
     };
 
@@ -473,6 +668,7 @@ function initializeBettingInterface(market) {
             tradeTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentTradeMode = tab.dataset.action;
+            currentBetAmount = 0; // Reset amount when switching modes
 
             // Update label based on mode
             const amountLabel = document.querySelector('.amount-label');
@@ -481,32 +677,69 @@ function initializeBettingInterface(market) {
                 amountLabel.innerText = 'Amount (Credits)';
                 amountIcon.src = 'bucks.png';
             } else {
-                amountLabel.innerText = 'Shares to Sell';
-                amountIcon.src = 'brain.png'; // Using a different icon for shares
+                amountLabel.innerText = 'Estimated Proceeds';
+                amountIcon.src = 'bucks.png';
             }
 
+            renderQuickButtons();
             updateBettingDisplay();
         };
     });
 
+    function renderQuickButtons() {
+        const container = document.getElementById('quickAmountContainer');
+        if (!container) return;
+
+        if (currentTradeMode === 'buy') {
+            container.innerHTML = `
+                <button class="q-btn" data-amount="1">+1</button>
+                <button class="q-btn" data-amount="10">+10</button>
+                <button class="q-btn" data-amount="100">+100</button>
+                <button class="q-btn" data-amount="1000">+1,000</button>
+            `;
+        } else {
+            container.innerHTML = `
+                <button class="q-btn" data-percent="25">25%</button>
+                <button class="q-btn" data-percent="50">50%</button>
+                <button class="q-btn" data-percent="100">Max</button>
+            `;
+        }
+
+        // Re-attach listeners to new buttons
+        container.querySelectorAll('.q-btn').forEach(btn => {
+            btn.onclick = () => {
+                const posKey = `${currentMarket.id}_${currentOutcome}`;
+                const currentPosition = userPositions[posKey];
+                const sharesOwned = currentPosition ? currentPosition.shares : 0;
+                const outcomeOption = currentMarket.options.find(opt => opt.name === currentOutcome);
+                const pricePerShare = outcomeOption ? outcomeOption.percent : 0;
+
+                if (btn.dataset.amount) {
+                    currentBetAmount += parseInt(btn.dataset.amount);
+                } else if (btn.dataset.percent) {
+                    const percent = parseInt(btn.dataset.percent);
+                    // Amount in Sell mode is now Credits (Value), not Shares
+                    currentBetAmount = Math.floor((sharesOwned * (percent / 100)) * pricePerShare);
+                }
+
+                if (currentBetAmount < 0) currentBetAmount = 0;
+                updateBettingDisplay(true);
+            };
+        });
+    }
+
+    renderQuickButtons();
+
     const betInput = document.getElementById('betAmountInput');
 
     betInput.oninput = (e) => {
-        let val = parseInt(e.target.value) || 0;
+        let val = parseFloat(e.target.value) || 0;
         if (val < 0) val = 0;
         currentBetAmount = val;
         updateBettingDisplay(false); // Update stats but don't re-sync input
     };
 
-    quickButtons.forEach(btn => {
-        btn.onclick = () => {
-            if (btn.dataset.amount) {
-                currentBetAmount += parseInt(btn.dataset.amount);
-            }
-            if (currentBetAmount < 0) currentBetAmount = 0;
-            updateBettingDisplay(true); // Re-sync input
-        };
-    });
+    // Unified click helper removed, now handled inside renderQuickButtons
 
     tradeButton.onclick = () => {
         const amount = currentBetAmount;
@@ -528,8 +761,12 @@ function initializeBettingInterface(market) {
             const sharesBought = amount / pricePerShare;
             userBalance -= amount;
 
+            // Shift odds based on bet value
+            outcomeOption.pool += amount;
+            recalculateOdds(currentMarket);
+
             if (!userPositions[posKey]) {
-                userPositions[posKey] = { shares: 0, avgPrice: pricePerShare };
+                userPositions[posKey] = { shares: sharesBought, avgPrice: pricePerShare };
             } else {
                 const totalCost = (userPositions[posKey].shares * userPositions[posKey].avgPrice) + amount;
                 userPositions[posKey].shares += sharesBought;
@@ -538,6 +775,7 @@ function initializeBettingInterface(market) {
             userPositions[posKey].shares = parseFloat(userPositions[posKey].shares.toFixed(2));
 
             updateBalanceUI();
+            saveState(); // Persist changes
 
             // Notify
             const notification = document.createElement('div');
@@ -559,23 +797,38 @@ function initializeBettingInterface(market) {
                 return;
             }
 
-            const sharesToSell = amount || currentPosition.shares; // If input is 0, sell all
+            const pricePerShare = outcomeOption.percent;
+            // amount is now Credits (Proceeds)
+            const sharesToSell = amount / pricePerShare;
 
-            if (sharesToSell > currentPosition.shares) {
-                alert(`Insufficient shares! You only own ${currentPosition.shares.toLocaleString()} shares.`);
+            // If the market is completed, check if it's the winner
+            if (currentMarket.isCompleted && currentOutcome !== currentMarket.winningOutcome) {
+                alert("This outcome lost. Shares are worthless.");
                 return;
             }
 
-            const pricePerShare = outcomeOption.percent;
-            const saleProceeds = sharesToSell * pricePerShare;
+            if (sharesToSell > currentPosition.shares + 0.01) {
+                alert(`Insufficient shares! You only own ${currentPosition.shares.toLocaleString()} shares (Value: ${(currentPosition.shares * pricePerShare).toLocaleString()}).`);
+                return;
+            }
+
+            const saleProceeds = amount;
             userBalance += saleProceeds;
             currentPosition.shares -= sharesToSell;
 
-            if (currentPosition.shares <= 0) {
+            // Shift odds back
+            outcomeOption.pool -= amount;
+            if (outcomeOption.pool < 1000) outcomeOption.pool = 1000; // Floor liquidity
+            recalculateOdds(currentMarket);
+
+            if (currentPosition.shares <= 0.001) {
                 delete userPositions[posKey];
+            } else {
+                currentPosition.shares = parseFloat(currentPosition.shares.toFixed(2));
             }
 
             updateBalanceUI();
+            saveState(); // Persist changes
 
             const notification = document.createElement('div');
             notification.className = 'watchlist-popup';
@@ -611,17 +864,27 @@ function updateBettingDisplay(syncInput = true) {
         if (input) input.value = currentBetAmount;
     }
 
-    document.getElementById('statAvgPrice').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + price.toFixed(1);
+    // Format Avg Price (e.g. 19¢ or 19.5¢)
+    document.getElementById('statAvgPrice').innerText = price.toFixed(1) + '¢';
+
+    // Always keep the "To win" label consistent as requested
+    document.querySelector('.to-win-label').innerHTML = 'To win 💸';
 
     if (currentTradeMode === 'buy') {
-        document.getElementById('statPotentialReturn').innerHTML = '<img src="bucks.png" class="gbucks-logo-inline"> ' + potentialReturn.toFixed(2);
+        // Potential return is Amount / (Price/100)
+        document.getElementById('statPotentialReturn').innerText = '$' + potentialReturn.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         const actionText = currentPosition ? 'Add more to your position' : `Buy ${currentOutcome}`;
         document.getElementById('tradeButtonMain').innerText = actionText;
     } else {
-        const sharesOwned = currentPosition ? currentPosition.shares : 0;
-        const sellValue = sharesOwned * priceDecimal;
-        document.getElementById('statPotentialReturn').innerHTML = `Owned: ${sharesOwned.toLocaleString()} shares (Value: <img src="bucks.png" class="gbucks-logo-inline"> ${sellValue.toFixed(2)})`;
+        const pricePerShare = outcomeOption.percent;
+        const netShares = currentBetAmount / pricePerShare; // amount is Credits, so shares = Value / Price
+
+        // "To win" for these shares is simply their number (since each winning share = $1.00)
+        const potentialWinOfShares = netShares * 1.00;
+
+        document.getElementById('statPotentialReturn').innerText = '$' + potentialWinOfShares.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
         document.getElementById('tradeButtonMain').innerText = `Sell ${currentOutcome}`;
     }
 }
@@ -684,6 +947,7 @@ function toggleWatchList(e, marketId) {
         watchList.add(marketId);
         added = true;
     }
+    saveState(); // Persist watchlist
     renderMarkets(document.querySelector('.sub-cat-pill.active')?.innerText || 'All');
     return added;
 }
@@ -701,12 +965,14 @@ function renderMarkets(activeFilter = 'All') {
 
     // Filter markets
     const filtered = markets.filter(m => {
-        // Exclude completed events from main feed
-        if (m.isCompleted) return false;
+        // Exclude completed events from main feed (unless it's the Active view and user has a position)
+        if (m.isCompleted && currentVolumeDisplay !== 'active') return false;
 
         // --- Volume Toggle Filters ---
         if (currentVolumeDisplay === 'active') {
-            return Object.keys(userPositions).some(key => key.startsWith(m.id + "_"));
+            return Object.keys(userPositions).some(key => {
+                return key.startsWith(m.id + "_") && userPositions[key].shares > 0.001;
+            });
         }
         if (currentVolumeDisplay === 'watchlist') {
             return watchList.has(m.id);
@@ -777,6 +1043,7 @@ function renderMarkets(activeFilter = 'All') {
             displayVolume = formatVolume(m.volume24hr + m.volume * 0.1);
         }
 
+        const volumeText = currentVolumeDisplay === 'active' ? displayVolume : `${displayVolume} Vol.`;
 
         card.innerHTML = `
             <div class="card-header">
@@ -790,16 +1057,16 @@ function renderMarkets(activeFilter = 'All') {
             let houseColor = 'rgba(255, 255, 255, 0.1)';
             let textColor = '#fff';
 
-            if (name.includes('vijaynagar')) {
+            if (name.includes('yellow house')) {
                 houseColor = 'rgba(245, 158, 11, 0.15)';
                 textColor = '#f59e0b';
-            } else if (name.includes('taxila')) {
+            } else if (name.includes('green house')) {
                 houseColor = 'rgba(16, 185, 129, 0.15)';
                 textColor = '#10b981';
-            } else if (name.includes('nalanda')) {
+            } else if (name.includes('blue house')) {
                 houseColor = 'rgba(59, 130, 246, 0.15)';
                 textColor = '#3b82f6';
-            } else if (name.includes('nagarjuna')) {
+            } else if (name.includes('red house')) {
                 houseColor = 'rgba(239, 68, 68, 0.15)';
                 textColor = '#ef4444';
             } else if (name === 'yes') {
@@ -811,7 +1078,7 @@ function renderMarkets(activeFilter = 'All') {
             }
 
             const posKey = `${m.id}_${opt.name}`;
-            const hasPosition = !!userPositions[posKey];
+            const hasPosition = !!userPositions[posKey] && userPositions[posKey].shares > 0.001;
 
             // If we are in 'Active' view, skip options the user doesn't own
             if (currentVolumeDisplay === 'active' && !hasPosition) return '';
@@ -836,7 +1103,7 @@ function renderMarkets(activeFilter = 'All') {
             </div>
 
             <div class="card-footer">
-                <div class="footer-volume">${displayVolume} Vol.</div>
+                <div class="footer-volume">${volumeText}</div>
                 <div class="footer-actions">
                     <span class="footer-icon" data-tooltip="G 100 bet: G ${(100 / (m.options[0].percent / 100)).toFixed(0)} Potential Return">🎁</span>
                     <span class="footer-icon ${watchList.has(m.id) ? 'active' : ''}" 
@@ -870,6 +1137,25 @@ function renderCompletedEvents() {
         const winnerOpt = m.options.find(o => o.name === m.winningOutcome);
         if (winnerOpt) winnerColor = winnerOpt.color || winnerColor;
 
+        let statHtml = '';
+        const stats = resolvedStatistics[m.id];
+        if (stats) {
+            const isLoss = stats.net < 0;
+            const color = isLoss ? 'var(--accent-red)' : 'var(--accent-green)';
+            const sign = isLoss ? '-' : '+';
+            const label = isLoss ? 'Total Loss' : 'Total Profit';
+
+            statHtml = `
+                <div style="margin-top: 12px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${label}</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: ${color};">
+                         <img src="bucks.png" class="gbucks-logo-inline" style="width: 20px; height: 20px;"> ${sign}${Math.abs(stats.net).toLocaleString()}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Investment: ${stats.investment.toLocaleString()}</div>
+                </div>
+            `;
+        }
+
         card.innerHTML = `
             <div class="card-header">
                 <img src="${m.icon}" class="card-icon">
@@ -880,6 +1166,7 @@ function renderCompletedEvents() {
                 <div style="font-size: 2rem; margin-bottom: 8px;">🏆</div>
                 <div class="outcome-label" style="font-size: 0.8rem;">Winner</div>
                 <div class="outcome-value" style="font-size: 1.5rem; background: ${winnerColor}; -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${m.winningOutcome}</div>
+                ${statHtml}
             </div>
             
             <div class="card-footer">
@@ -975,7 +1262,7 @@ function renderChart(market) {
                     grid: { display: false },
                     border: { display: false },
                     ticks: {
-                        color: '#5e6773',
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--chart-ticks').trim(),
                         maxRotation: 0,
                         autoSkip: true,
                         maxTicksLimit: 6,
@@ -991,10 +1278,10 @@ function renderChart(market) {
                 },
                 y: {
                     position: 'right',
-                    grid: { color: 'rgba(255,255,255,0.03)' },
+                    grid: { color: getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim() },
                     border: { display: false },
                     ticks: {
-                        color: '#5e6773',
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--chart-ticks').trim(),
                         font: { size: 11 },
                         callback: v => v + '%',
                         maxTicksLimit: 5
@@ -1197,13 +1484,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Leaderboard Back Button
     document.querySelector('.lb-back-btn').onclick = () => showHomepage();
 
+    // Completed Events Back Button
+    const ceBackBtn = document.getElementById('completedEventsBackBtn');
+    if (ceBackBtn) ceBackBtn.onclick = () => showHomepage();
+
     // Dark Mode Toggle
     const darkModeToggle = document.getElementById('darkModeToggle');
     darkModeToggle.onclick = (e) => {
         e.stopPropagation();
         document.body.classList.toggle('light-mode');
-        // Update Chart if it exists to match colors
-        if (currentMarket) renderChart(currentMarket);
+
+        // Redraw chart if visible to update theme colors
+        if (currentMarket && document.getElementById('marketChart')) {
+            renderChart(currentMarket);
+        }
     };
 
     // Close dropdown on outside click
@@ -1268,12 +1562,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const hiwFlow = document.getElementById('hiwFlow');
     const authFlow = document.getElementById('authFlow');
 
-    const openModal = (type) => {
+    const openModal = (type, mode = 'login') => {
         modalOverlay.classList.add('show');
         hiwFlow.style.display = type === 'hiw' ? 'block' : 'none';
         authFlow.style.display = type === 'auth' ? 'block' : 'none';
+
+        if (type === 'auth') {
+            isSignUpMode = (mode === 'signup');
+            updateAuthModalUI();
+        }
+
         if (type === 'hiw') resetHiw();
     };
+
+    function updateAuthModalUI() {
+        const authTitle = document.getElementById('authTitle');
+        const authSubmitBtn = document.getElementById('authSubmitBtn');
+        const authModeToggle = document.getElementById('authModeToggle');
+        const authUsername = document.getElementById('authUsername');
+        const authError = document.getElementById('authError');
+
+        authTitle.innerText = isSignUpMode ? "Create an Account" : "Log In to Spiral";
+        authSubmitBtn.innerText = isSignUpMode ? "Sign Up" : "Log In";
+        authModeToggle.innerText = isSignUpMode ? "Already have an account? Log In" : "Don't have an account? Sign Up";
+        authUsername.style.display = isSignUpMode ? "block" : "none";
+        authError.style.display = "none";
+    }
 
     const closeModal = () => modalOverlay.classList.remove('show');
 
@@ -1288,12 +1602,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal('hiw');
     };
 
-    document.getElementById('loginBtn').onclick = (e) => {
-        e.preventDefault();
-        openModal('auth');
-    };
-
-    document.getElementById('signupBtn').onclick = () => openModal('auth');
+    document.getElementById('signupBtn').onclick = () => openModal('auth', 'signup');
 
     modalClose.onclick = closeModal;
     modalOverlay.onclick = (e) => {
@@ -1340,9 +1649,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             lbTimeframeSelector.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            // Simulate filtering behavior check
-            // For now, just a visual update
         };
     }
 
@@ -1350,7 +1656,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const lbCatDropdown = document.querySelector('.cat-dropdown-sim');
     if (lbCatDropdown) {
         lbCatDropdown.onclick = () => {
-            // Simple toggle simulation
             const textSpan = lbCatDropdown.querySelector('span');
             if (textSpan.innerText === 'All Categories') {
                 textSpan.innerText = 'Sports';
@@ -1361,4 +1666,70 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
+
+    // --- NEW: Auth Flow Logic ---
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const googleAuthBtn = document.getElementById('googleAuthBtn');
+    const authModeToggle = document.getElementById('authModeToggle');
+    const authEmail = document.getElementById('authEmail');
+    const authPassword = document.getElementById('authPassword');
+    const authUsername = document.getElementById('authUsername');
+    const authTitle = document.getElementById('authTitle');
+    const authError = document.getElementById('authError');
+    let isSignUpMode = false;
+
+    authModeToggle.onclick = () => {
+        isSignUpMode = !isSignUpMode;
+        updateAuthModalUI();
+    };
+
+    authSubmitBtn.onclick = async () => {
+        const email = authEmail.value;
+        const password = authPassword.value;
+        const username = authUsername.value;
+
+        try {
+            if (isSignUpMode) {
+                if (!username) throw new Error("Please enter a username.");
+                await signUp(email, password, username);
+            } else {
+                await logIn(email, password);
+            }
+            closeModal();
+        } catch (err) {
+            authError.innerText = err.message;
+            authError.style.display = "block";
+        }
+    };
+
+    googleAuthBtn.onclick = async () => {
+        try {
+            await logInWithGoogle();
+            closeModal();
+        } catch (err) {
+            authError.innerText = err.message;
+            authError.style.display = "block";
+        }
+    };
+
+    // Logout
+    document.querySelector('.menu-item.logout').onclick = (e) => {
+        e.preventDefault();
+        logOut().then(() => {
+            window.location.reload(); // Refresh to reset state
+        });
+    };
+
+    // --- Firebase Auth State Observer ---
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("User logged in:", user.uid);
+            updateHeaderUserUI(user.displayName, user.email); // Immediate UI feedback to hide buttons
+            loadState(user.uid);
+        } else {
+            console.log("No user logged in.");
+            updateHeaderUserUI(null, null);
+            loadState(); // Ensure balance is 0 for guests
+        }
+    });
 });

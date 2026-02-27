@@ -31,7 +31,7 @@
                     <span class="logo-text">Spiral</span>
                     <div class="coin-balance" id="headerBalance">
                         <img src="bucks.png" alt="G" class="gbucks-icon">
-                        <span id="userBalanceText">10,000</span>
+                        <span id="userBalanceText">0</span>
                     </div>
                 </div>
 
@@ -44,8 +44,9 @@
                     <a href="#" class="nav-link how-it-works-link" id="howItWorksBtn">
                         <span class="info-icon-circle">👁</span> How it works
                     </a>
-                    <a href="#" class="nav-link" id="loginBtn">Log In</a>
-                    <button class="btn btn-primary" id="signupBtn">Sign Up</button>
+                    <div id="authButtons" style="display: flex; align-items: center; gap: 20px;">
+                        <button class="btn btn-primary" id="signupBtn">Sign Up</button>
+                    </div>
                     <div class="menu-container">
                         <span class="menu-trigger" id="menuToggle">☰</span>
                         <div class="dropdown-menu" id="navDropdown">
@@ -207,16 +208,14 @@
                         Trade
                     </button>
 
-                    <!-- Stats Footer -->
-                    <div class="trade-stats-footer" id="tradeStatsFooter">
-                        <div class="stat-row">
-                            <span>Avg price</span>
-                            <span id="statAvgPrice">0¢</span>
+                    <!-- To Win Section (Polymarket Style) -->
+                    <div class="to-win-container">
+                        <div class="to-win-header">
+                            <span class="to-win-label">To win 💸</span>
+                            <span id="statPotentialReturn" class="to-win-amount">$0.00</span>
                         </div>
-                        <div class="stat-row">
-                            <span>Potential return</span>
-                            <span id="statPotentialReturn" style="color: var(--accent-green);"><img src="bucks.png"
-                                    class="gbucks-logo-inline"> 0.00</span>
+                        <div class="avg-price-subtext">
+                            Avg. Price <span id="statAvgPrice">0¢</span> <span class="info-icon">ⓘ</span>
                         </div>
                     </div>
 
@@ -312,6 +311,7 @@
 
         <!-- COMPLETED EVENTS SECTION -->
         <div id="completedEventsPage" style="display: none;" class="animate-in">
+            <button class="back-btn" id="completedEventsBackBtn">← Back</button>
             <h1 class="leaderboard-title">Completed Events</h1>
             <div class="market-grid" id="completedEventsGrid">
                 <!-- Completed market cards injected here -->
@@ -330,20 +330,21 @@
                 <div class="hiw-step active" data-step="1">
                     <div class="hiw-visual">
                         <div class="hiw-mock-card">
-                            <div class="mock-market-text">Will there be a US<br>recession this year?</div>
+                            <div class="mock-market-text">Who will win the match<br>between Red House and Green House?
+                            </div>
                             <div class="mock-stats">
                                 <div class="mock-percentage">50%</div>
                                 <div class="mock-chart"></div>
                             </div>
                             <div class="mock-btns-row">
-                                <div class="mock-btn-y">Yes</div>
-                                <div class="mock-btn-n">No</div>
+                                <div class="mock-btn-y">Red House</div>
+                                <div class="mock-btn-n">Green House</div>
                             </div>
                         </div>
                     </div>
                     <h2 class="hiw-title">1. Pick a Market</h2>
-                    <p class="hiw-description">Buy 'Yes' or 'No' shares depending on your prediction. Buying shares is
-                        like betting on the outcome. Odds shift in real time as other traders bet.</p>
+                    <p class="hiw-description">Pick the house you think will win. Odds change as students trade,
+                        reflecting the crowd’s prediction in real time.</p>
                     <button class="hiw-btn next-hiw-step">Next</button>
                 </div>
 
@@ -354,18 +355,18 @@
                             <div class="mock-slip slip-1">
                                 <div class="slip-amt"><img src="bucks.png" class="gbucks-logo-inline"> 100</div>
                                 <div class="slip-win">To Win <img src="bucks.png" class="gbucks-logo-inline"> 400</div>
-                                <div class="slip-btn-y">Buy Yes</div>
+                                <div class="slip-btn-y" style="background:var(--accent-red);">Buy Red House</div>
                             </div>
                             <div class="mock-slip slip-2">
                                 <div class="slip-amt"><img src="bucks.png" class="gbucks-logo-inline"> 100</div>
                                 <div class="slip-win">To Win <img src="bucks.png" class="gbucks-logo-inline"> 133</div>
-                                <div class="slip-btn-n">Buy No</div>
+                                <div class="slip-btn-n" style="background:var(--accent-green);">Buy Green House</div>
                             </div>
                         </div>
                     </div>
                     <h2 class="hiw-title">2. Place a Bet</h2>
-                    <p class="hiw-description">Fund your account with crypto, credit/debit card, or bank transfer—then
-                        you're ready to bet. No bet limits and no fees.</p>
+                    <p class="hiw-description">Every user starts with 10,000 G-Bucks on login. Use them to trade
+                        predictions—no real money, no wallets, no payments.</p>
                     <button class="hiw-btn next-hiw-step">Next</button>
                 </div>
 
@@ -373,7 +374,7 @@
                 <div class="hiw-step" data-step="3">
                     <div class="hiw-visual">
                         <div class="hiw-mock-receipt">
-                            <div class="receipt-header">Will there be a US recession this year?</div>
+                            <div class="receipt-header">Who will win the match between Red House and Green House?</div>
                             <div class="receipt-divider"></div>
                             <div class="receipt-row"><span>Odds</span><span class="dot"></span></div>
                             <div class="receipt-row"><span>Bet</span><span class="dot"></span></div>
@@ -385,17 +386,16 @@
                         </div>
                     </div>
                     <h2 class="hiw-title">3. Profit 🤑</h2>
-                    <p class="hiw-description">Sell your 'Yes' or 'No' shares at any time, or wait until the market ends
-                        to redeem winning shares for $1 each. Create an account and place your first trade in minutes.
-                    </p>
+                    <p class="hiw-description">Sell your position anytime before the match ends to lock in profits, or
+                        hold till the result is declared.</p>
                     <button class="hiw-btn" id="finishHiw">Get Started</button>
                 </div>
             </div>
 
             <!-- Auth Flow -->
             <div id="authFlow" style="display: none;">
-                <h2 class="auth-title">Welcome to Spiral</h2>
-                <button class="google-btn">
+                <h2 class="auth-title" id="authTitle">Log In to Spiral</h2>
+                <button class="google-btn" id="googleAuthBtn">
                     <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google"
                         style="width: 18px; height: 18px;">
                     Continue with Google
@@ -403,9 +403,18 @@
 
                 <div class="auth-divider">OR</div>
 
-                <div class="auth-input-group">
-                    <input type="email" class="auth-input" placeholder="Email address">
-                    <button class="auth-submit">Continue</button>
+                <div class="auth-inputs-stack">
+                    <input type="text" class="auth-input-full" id="authUsername" placeholder="Username"
+                        style="display: none;">
+                    <input type="email" class="auth-input-full" id="authEmail" placeholder="Email address">
+                    <input type="password" class="auth-input-full" id="authPassword" placeholder="Password">
+                    <button class="auth-submit-full" id="authSubmitBtn">Log In</button>
+                    <div id="authError"
+                        style="color: var(--accent-red); font-size: 0.85rem; text-align: center; margin-top: 5px; display: none;">
+                    </div>
+                    <div id="authModeToggle"
+                        style="color: var(--accent-blue); font-size: 0.85rem; text-align: center; margin-top: 10px; cursor: pointer; font-weight: 500;">
+                        Don't have an account? Sign Up</div>
                 </div>
 
                 <p style="margin-top: 24px; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
@@ -416,7 +425,8 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Firebase SDK / Auth Logic -->
+    <script type="module" src="script.js"></script>
 </body>
 
 </html>
