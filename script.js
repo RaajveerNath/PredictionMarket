@@ -1561,11 +1561,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalClose = document.getElementById('modalClose');
     const hiwFlow = document.getElementById('hiwFlow');
     const authFlow = document.getElementById('authFlow');
+    const termsFlow = document.getElementById('termsFlow');
+    const supportFlow = document.getElementById('supportFlow');
 
     const openModal = (type, mode = 'login') => {
         modalOverlay.classList.add('show');
         hiwFlow.style.display = type === 'hiw' ? 'block' : 'none';
         authFlow.style.display = type === 'auth' ? 'block' : 'none';
+        if (termsFlow) termsFlow.style.display = type === 'terms' ? 'block' : 'none';
+        if (supportFlow) supportFlow.style.display = type === 'support' ? 'block' : 'none';
 
         if (type === 'auth') {
             isSignUpMode = (mode === 'signup');
@@ -1603,6 +1607,43 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('signupBtn').onclick = () => openModal('auth', 'signup');
+
+    // Add Terms of Use click handlers
+    const navTermsBtn = document.getElementById('navTermsMenuBtn');
+    if (navTermsBtn) {
+        navTermsBtn.onclick = (e) => {
+            e.preventDefault();
+            navDropdown.classList.remove('show'); // close dropdown
+            openModal('terms');
+        };
+    }
+
+    const navSupportBtn = document.getElementById('navSupportMenuBtn');
+    if (navSupportBtn) {
+        navSupportBtn.onclick = (e) => {
+            e.preventDefault();
+            navDropdown.classList.remove('show'); // close dropdown
+            openModal('support');
+        };
+    }
+
+    const closeSupportBtn = document.getElementById('closeSupport');
+    if (closeSupportBtn) {
+        closeSupportBtn.onclick = closeModal;
+    }
+
+    document.querySelectorAll('.terms-link').forEach(link => {
+        link.onclick = (e) => {
+            e.preventDefault();
+            openModal('terms');
+        };
+    });
+
+    const finishTermsBtn = document.getElementById('finishTerms');
+    if (finishTermsBtn) {
+        finishTermsBtn.onclick = closeModal;
+    }
+
 
     modalClose.onclick = closeModal;
     modalOverlay.onclick = (e) => {
